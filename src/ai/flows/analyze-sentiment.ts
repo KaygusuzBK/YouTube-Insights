@@ -133,10 +133,7 @@ export async function analyzeSentiment(
 }
 
 // Channel Analysis Function
-export async function analyzeChannelSentiment(
-  input: AnalyzeChannelSentimentInput, 
-  onProgress?: (progress: number, message: string) => void
-): Promise<AnalyzeChannelSentimentOutput> {
+export async function analyzeChannelSentiment(input: AnalyzeChannelSentimentInput): Promise<AnalyzeChannelSentimentOutput> {
   const { channelUrl } = input;
   const channelId = extractChannelId(channelUrl);
   
@@ -155,7 +152,6 @@ export async function analyzeChannelSentiment(
 
   // Stage 1: Fetch channel data (25%)
   console.log('Stage 1: Fetching channel data...');
-  onProgress?.(25, 'Kanal bilgileri alınıyor...');
   const channelData = await getChannelComments(channelId);
   
   if (!channelData || !channelData.channel) {
@@ -210,7 +206,6 @@ export async function analyzeChannelSentiment(
 
   // Stage 2: Analyze each video individually
   console.log('Stage 2: Analyzing videos individually...');
-  onProgress?.(50, 'Videolar tek tek analiz ediliyor...');
   
   const analyzedVideos: VideoAnalysis[] = [];
   let totalComments = 0;
@@ -220,10 +215,8 @@ export async function analyzeChannelSentiment(
 
   for (let i = 0; i < videosWithComments.length; i++) {
     const video = videosWithComments[i];
-    const progressPercent = 50 + ((i + 1) / videosWithComments.length) * 45; // 50% to 95%
     
     console.log(`Analyzing video ${i + 1}/${videosWithComments.length}: ${video.video.title}`);
-    onProgress?.(progressPercent, `Video ${i + 1}/${videosWithComments.length} analiz ediliyor: ${video.video.title.substring(0, 30)}...`);
     
     if (video.comments.length === 0) {
       // Video has no comments, add empty analysis
@@ -265,7 +258,7 @@ export async function analyzeChannelSentiment(
   }
 
   // Final stage: Calculate overall results
-  onProgress?.(95, 'Genel sonuçlar hesaplanıyor...');
+  console.log('Final stage: Calculating overall results...');
 
   // Calculate overall channel sentiment
   const totalVideos = sentimentScores.positive + sentimentScores.negative + sentimentScores.neutral;
@@ -317,7 +310,7 @@ export async function analyzeChannelSentiment(
   };
 
   setCachedResult(`channel_${channelId}`, result);
-  onProgress?.(100, 'Analiz tamamlandı!');
+  console.log('Channel analysis completed successfully');
   return result;
 }
 

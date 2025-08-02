@@ -127,13 +127,20 @@ export default function Home() {
     setProgressMessage('Kanal bilgileri alınıyor...');
 
     try {
-      const result = await analyzeChannelSentiment(
-        { channelUrl: url }, 
-        (progress, message) => {
-          setProgress(progress);
-          setProgressMessage(message);
-        }
-      );
+      // Simulate progress for better UX
+      setProgress(25);
+      setProgressMessage('Kanal videoları taranıyor...');
+      
+      // Small delay to show progress
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setProgress(50);
+      setProgressMessage('Videolar tek tek analiz ediliyor...');
+
+      const result = await analyzeChannelSentiment({ channelUrl: url });
+
+      setProgress(100);
+      setProgressMessage('Analiz tamamlandı!');
 
       setChannelAnalysis(result);
       setActiveTab('channel');
