@@ -6,8 +6,9 @@ import { BuyMeCoffeePopup } from '@/components/buy-me-coffee-popup';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import { analyzeSentiment, type AnalyzeSentimentOutput } from '@/ai/flows/analyze-sentiment';
-import { Sparkles, Clapperboard, Brain, Zap, BarChart3, Target } from 'lucide-react';
+import { Sparkles, Clapperboard, Brain, Zap, BarChart3, Target, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,6 +18,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCoffeePopup, setShowCoffeePopup] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
   const { toast } = useToast();
 
   // Sayfa yüklendiğinde popup'ı göster
@@ -32,6 +35,8 @@ export default function Home() {
     e.preventDefault();
     setError(null);
     setAnalysis(null);
+    setProgress(0);
+    setProgressMessage('');
     
     // Basic URL validation
     const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}/;
@@ -48,13 +53,40 @@ export default function Home() {
     setIsLoading(true);
 
     try {
+      // Progress simulation
+      setProgressMessage('YouTube yorumları alınıyor...');
+      setProgress(25);
+      
+      // Small delay to show progress
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setProgressMessage('AI ile analiz yapılıyor...');
+      setProgress(50);
+      
       const result = await analyzeSentiment({ videoUrl: url });
+      
+      setProgressMessage('Sonuçlar işleniyor...');
+      setProgress(75);
+      
+      // Small delay to show final progress
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      setProgressMessage('Analiz tamamlandı!');
+      setProgress(100);
+      
       setAnalysis(result);
+      
       if(result.comments.length === 0){
         toast({
           title: 'Yorum Bulunamadı',
           description: 'Bu video için yorum bulunamadı veya API anahtarınızda bir sorun olabilir.',
           variant: 'destructive'
+        })
+      } else {
+        toast({
+          title: 'Analiz Tamamlandı!',
+          description: `${result.comments.length} yorum başarıyla analiz edildi.`,
+          variant: 'default'
         })
       }
     } catch (e) {
@@ -68,6 +100,11 @@ export default function Home() {
       })
     } finally {
       setIsLoading(false);
+      // Reset progress after a delay
+      setTimeout(() => {
+        setProgress(0);
+        setProgressMessage('');
+      }, 2000);
     }
   };
 
@@ -169,13 +206,38 @@ export default function Home() {
                   disabled={isLoading} 
                   className="h-14 px-8 text-base font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105 shadow-lg shadow-blue-500/25 rounded-xl"
                 >
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  {isLoading ? 'Analiz ediliyor...' : 'Analiz Et'}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Analiz ediliyor...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-5 w-5" />
+                      Analiz Et
+                    </>
+                  )}
                 </Button>
               </form>
+
+              {/* Progress Bar */}
+              {isLoading && (
+                <div className="mt-6 max-w-2xl mx-auto">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {progressMessage}
+                    </span>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {progress}%
+                    </span>
+                  </div>
+                  <Progress value={progress} className="h-2 bg-slate-200 dark:bg-slate-700" />
+                </div>
+              )}
             </CardContent>
           </Card>
 
+          {/* Results */}
           <SentimentResults
             isLoading={isLoading}
             analysis={analysis}
@@ -184,7 +246,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Buy Me Coffee Popup */}
       <BuyMeCoffeePopup 
         isOpen={showCoffeePopup} 
         onClose={() => setShowCoffeePopup(false)} 

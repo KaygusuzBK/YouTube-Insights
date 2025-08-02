@@ -19,6 +19,16 @@ const ai = genkit({
   plugins: [googleAI({apiKey})],
 });
 
+// In-memory cache for storing analysis results
+const analysisCache = new Map<string, { result: any; timestamp: number }>();
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+// Progress tracking interface
+export interface AnalysisProgress {
+  stage: 'fetching' | 'analyzing' | 'processing' | 'complete';
+  message: string;
+  percentage: number;
+}
 
 const AnalyzeSentimentInputSchema = z.object({
   videoUrl: z.string().describe('The URL of the YouTube video to analyze.'),
@@ -53,6 +63,22 @@ export type AnalyzeSentimentOutput = z.infer<
   typeof AnalyzeSentimentOutputSchema
 >;
 
+// Cache management functions
+function getCachedResult(videoId: string): any | null {
+  const cached = analysisCache.get(videoId);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.result;
+  }
+  return null;
+}
+
+function setCachedResult(videoId: string, result: any): void {
+  analysisCache.set(videoId, {
+    result,
+    timestamp: Date.now()
+  });
+}
+
 export async function analyzeSentiment(
   input: AnalyzeSentimentInput
 ): Promise<AnalyzeSentimentOutput> {
@@ -60,6 +86,14 @@ export async function analyzeSentiment(
   if (!videoId) {
     throw new Error('Invalid YouTube URL');
   }
+
+  // Check cache first
+  const cachedResult = getCachedResult(videoId);
+  if (cachedResult) {
+    console.log('Returning cached result for video:', videoId);
+    return cachedResult;
+  }
+
   return analyzeSentimentFlow({videoId});
 }
 
@@ -113,18 +147,40 @@ const analyzeSentimentFlow = ai.defineFlow(
     outputSchema: AnalyzeSentimentOutputSchema,
   },
   async ({ videoId }) => {
+    console.log('Starting analysis for video:', videoId);
+    
+    // Stage 1: Fetching comments (25%)
+    console.log('Stage 1: Fetching YouTube comments...');
     const videoComments = await getComments(videoId);
+    console.log(`Fetched ${videoComments.length} comments`);
 
     if (videoComments.length === 0) {
-      return { 
+      const result = { 
         overallSentiment: 'Neutral', 
         positiveKeywords: [], 
         negativeKeywords: [], 
         comments: [] 
       };
+      setCachedResult(videoId, result);
+      return result;
     }
 
+    // Stage 2: AI Analysis (75%)
+    console.log('Stage 2: Analyzing comments with AI...');
     const {output} = await prompt({ videoComments: JSON.stringify(videoComments) });
-    return output || { overallSentiment: 'Neutral', positiveKeywords: [], negativeKeywords: [], comments: [] };
+    
+    const result = output || { 
+      overallSentiment: 'Neutral', 
+      positiveKeywords: [], 
+      negativeKeywords: [], 
+      comments: [] 
+    };
+
+    // Stage 3: Caching result (100%)
+    console.log('Stage 3: Caching result...');
+    setCachedResult(videoId, result);
+    
+    console.log('Analysis completed successfully');
+    return result;
   }
 );
