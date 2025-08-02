@@ -1,78 +1,104 @@
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Film, Moon, Sun, Sparkles, Brain, Zap } from "lucide-react";
-import { useState } from "react";
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { Moon, Sun, Coffee } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BuyMeCoffeePopup } from './buy-me-coffee-popup';
 
 export function Header() {
   const [isDark, setIsDark] = useState(false);
+  const [showCoffeePopup, setShowCoffeePopup] = useState(false);
+
+  useEffect(() => {
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    setIsDark(isDarkMode);
+  }, []);
 
   const toggleTheme = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle('dark');
+    const newTheme = !isDark;
+    setIsDark(newTheme);
+    document.documentElement.classList.toggle('dark', newTheme);
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full glass-effect border-b border-border/40 shadow-lg">
-      <div className="container mx-auto flex h-16 md:h-20 items-center justify-between px-4 md:px-6">
-        {/* Logo ve Başlık */}
-        <div className="flex items-center gap-2 md:gap-4 group">
-          <div className="relative">
-            <div className="p-2 md:p-3 bg-gradient-to-br from-primary/20 via-accent/20 to-primary/10 rounded-xl md:rounded-2xl transition-all duration-500 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-primary/20">
-              <Film className="h-5 w-5 md:h-7 md:w-7 text-gradient animate-pulse" />
+    <>
+      <header className="sticky top-0 z-40 w-full h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-700/50">
+        <div className="container mx-auto h-full flex items-center justify-between px-4">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg hover:scale-110 transition-transform cursor-pointer">
+              <div className="w-5 h-5 md:w-7 md:h-7 bg-white rounded-lg flex items-center justify-center">
+                <span className="text-xs md:text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">YT</span>
+              </div>
             </div>
-            <div className="absolute -top-1 -right-1 w-2 h-2 md:w-3 md:h-3 bg-gradient-to-r from-primary to-accent rounded-full animate-ping opacity-75"></div>
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1 md:gap-2">
-              <h1 className="text-lg md:text-2xl font-bold tracking-tight font-headline text-gradient">Tube Insights</h1>
-              <Badge variant="secondary" className="bg-gradient-to-r from-primary/10 to-accent/10 text-primary border-primary/20 text-xs px-1.5 md:px-2 py-0.5">
-                <Sparkles className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
-                <span className="hidden sm:inline">AI</span>
-              </Badge>
-            </div>
-            <p className="text-xs md:text-sm text-muted-foreground font-medium hidden sm:block">YouTube Yorum Analizi</p>
-          </div>
-        </div>
-        
-        {/* Sağ Taraf - Butonlar */}
-        <div className="flex items-center gap-2 md:gap-3">
-          {/* Özellikler - Mobilde gizli, tablet ve üstünde görünür */}
-          <div className="hidden lg:flex items-center gap-2">
-            <div className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-1.5 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full border border-primary/20">
-              <Zap className="h-3 w-3 text-primary" />
-              <span className="text-xs font-medium text-primary">Hızlı</span>
-            </div>
-            <div className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-1.5 bg-gradient-to-r from-accent/10 to-positive/10 rounded-full border border-accent/20">
-              <Brain className="h-3 w-3 text-accent" />
-              <span className="text-xs font-medium text-accent">AI</span>
+            <div>
+              <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-slate-800 to-blue-800 dark:from-white dark:to-blue-200 bg-clip-text text-transparent">
+                YouTube Insights
+              </h1>
+              <p className="hidden sm:block text-xs text-slate-500 dark:text-slate-400">
+                AI-Powered Analysis
+              </p>
             </div>
           </div>
 
-          {/* Mobil Özellik Badge'leri */}
-          <div className="flex lg:hidden items-center gap-1">
-            <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full border border-primary/20">
-              <Zap className="h-3 w-3 text-primary" />
+          {/* Center - Feature Badges */}
+          <div className="hidden lg:flex items-center gap-4">
+            <div className="flex items-center gap-1.5 md:gap-2 px-1.5 md:px-2 py-1 bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 rounded-full border border-emerald-200/50 dark:border-emerald-700/50">
+              <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-emerald-500 rounded-full"></div>
+              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Hızlı</span>
             </div>
-            <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-accent/10 to-positive/10 rounded-full border border-accent/20">
-              <Brain className="h-3 w-3 text-accent" />
+            <div className="flex items-center gap-1.5 md:gap-2 px-1.5 md:px-2 py-1 bg-gradient-to-r from-blue-500/10 to-blue-600/10 rounded-full border border-blue-200/50 dark:border-blue-700/50">
+              <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-blue-500 rounded-full"></div>
+              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">AI</span>
+            </div>
+            <div className="flex items-center gap-1.5 md:gap-2 px-1.5 md:px-2 py-1 bg-gradient-to-r from-purple-500/10 to-purple-600/10 rounded-full border border-purple-200/50 dark:border-purple-700/50">
+              <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-purple-500 rounded-full"></div>
+              <span className="text-xs font-medium text-purple-700 dark:text-purple-300">Detaylı</span>
             </div>
           </div>
 
-          {/* Theme Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleTheme}
-            className="h-8 w-8 md:h-10 md:w-10 rounded-lg md:rounded-xl hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10 transition-all duration-300 hover:scale-105 hover:shadow-lg"
-          >
-            {isDark ? (
-              <Sun className="h-4 w-4 md:h-5 md:w-5 text-yellow-500" />
-            ) : (
-              <Moon className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
-            )}
-          </Button>
+          {/* Mobile Feature Icons */}
+          <div className="flex lg:hidden items-center gap-2">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+          </div>
+
+          {/* Right Side - Actions */}
+          <div className="flex items-center gap-2">
+            {/* Support Button */}
+            <Button
+              onClick={() => setShowCoffeePopup(true)}
+              variant="ghost"
+              size="sm"
+              className="hidden sm:flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-all duration-300"
+            >
+              <Coffee className="h-4 w-4" />
+              <span className="text-sm font-medium">Destekle</span>
+            </Button>
+
+            {/* Theme Toggle */}
+            <Button
+              onClick={toggleTheme}
+              variant="ghost"
+              size="sm"
+              className="p-2 h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-300"
+            >
+              {isDark ? (
+                <Sun className="h-5 w-5 text-yellow-500" />
+              ) : (
+                <Moon className="h-5 w-5 text-slate-600" />
+              )}
+            </Button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Buy Me Coffee Popup */}
+      <BuyMeCoffeePopup 
+        isOpen={showCoffeePopup} 
+        onClose={() => setShowCoffeePopup(false)} 
+      />
+    </>
   );
 }

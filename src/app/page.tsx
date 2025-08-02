@@ -2,12 +2,13 @@
 
 import { Header } from '@/components/header';
 import { SentimentResults } from '@/components/sentiment-results';
+import { BuyMeCoffeePopup } from '@/components/buy-me-coffee-popup';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { analyzeSentiment, type AnalyzeSentimentOutput } from '@/ai/flows/analyze-sentiment';
 import { Sparkles, Clapperboard, TrendingUp, Brain, Zap, BarChart3, Users, Target } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
@@ -15,7 +16,17 @@ export default function Home() {
   const [analysis, setAnalysis] = useState<AnalyzeSentimentOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCoffeePopup, setShowCoffeePopup] = useState(false);
   const { toast } = useToast();
+
+  // Sayfa yüklendiğinde popup'ı göster
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowCoffeePopup(true);
+    }, 2000); // 2 saniye sonra popup göster
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,6 +183,12 @@ export default function Home() {
           />
         </div>
       </main>
+
+      {/* Buy Me Coffee Popup */}
+      <BuyMeCoffeePopup 
+        isOpen={showCoffeePopup} 
+        onClose={() => setShowCoffeePopup(false)} 
+      />
     </div>
   );
 }
