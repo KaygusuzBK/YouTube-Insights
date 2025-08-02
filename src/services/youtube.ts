@@ -12,12 +12,13 @@ type Comment = z.infer<typeof CommentSchema>;
 export async function getComments(videoId: string): Promise<Comment[]> {
   const apiKey = 'AIzaSyB446sE3RuxjZb7iJHvz_QiY3ltVYB0ZQ8';
   if (!apiKey) {
+    // This should not happen given the key is hardcoded, but it's good practice.
     throw new Error('YOUTUBE_API_KEY is not set.');
   }
 
   try {
     const response = await youtube.commentThreads.list({
-      key: apiKey,
+      auth: apiKey, // Use 'auth' instead of 'key' for authentication
       part: ['snippet'],
       videoId: videoId,
       maxResults: 20, // Fetch top 20 comment threads
@@ -25,7 +26,7 @@ export async function getComments(videoId: string): Promise<Comment[]> {
     });
 
     const commentThreads = response.data.items;
-    if (!commentThreads) {
+    if (!commentThreads || commentThreads.length === 0) {
       return [];
     }
 
@@ -39,7 +40,7 @@ export async function getComments(videoId: string): Promise<Comment[]> {
 
   } catch (error) {
     console.error('Error fetching YouTube comments:', error);
-    // It's better to return an empty array than to throw, so the UI can handle it gracefully.
+    // Return an empty array to allow the UI to handle it gracefully.
     return [];
   }
 }
