@@ -1,17 +1,20 @@
 'use server';
 
 /**
- * @fileOverview A YouTube channel sentiment analyzer using real comments from all videos.
+ * @fileOverview A YouTube sentiment analyzer supporting both video and channel analysis.
  *
+ * - analyzeSentiment - A function that handles the sentiment analysis of YouTube video comments.
  * - analyzeChannelSentiment - A function that handles the sentiment analysis of YouTube channel comments.
+ * - AnalyzeSentimentInput - The input type for the analyzeSentiment function.
  * - AnalyzeChannelSentimentInput - The input type for the analyzeChannelSentiment function.
+ * - AnalyzeSentimentOutput - The return type for the analyzeSentiment function.
  * - AnalyzeChannelSentimentOutput - The return type for the analyzeChannelSentiment function.
  */
 
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
-import {getChannelComments, extractChannelId} from '@/services/youtube';
+import {getComments, getChannelComments, extractChannelId, extractVideoId} from '@/services/youtube';
 
 const apiKey = 'AIzaSyB446sE3RuxjZb7iJHvz_QiY3ltVYB0ZQ8';
 
@@ -30,10 +33,11 @@ export interface AnalysisProgress {
   percentage: number;
 }
 
-const AnalyzeChannelSentimentInputSchema = z.object({
-  channelUrl: z.string().describe('The URL of the YouTube channel to analyze.'),
+// Video Analysis Types
+const AnalyzeSentimentInputSchema = z.object({
+  videoUrl: z.string().describe('The URL of the YouTube video to analyze.'),
 });
-export type AnalyzeChannelSentimentInput = z.infer<typeof AnalyzeChannelSentimentInputSchema>;
+export type AnalyzeSentimentInput = z.infer<typeof AnalyzeSentimentInputSchema>;
 
 const CommentSchema = z.object({
   author: z.string().describe("The name of the comment's author."),
@@ -42,6 +46,30 @@ const CommentSchema = z.object({
     .enum(['Positive', 'Negative', 'Neutral'])
     .describe('The sentiment of the comment.'),
 });
+
+const AnalyzeSentimentOutputSchema = z.object({
+  overallSentiment: z
+    .string()
+    .describe(
+      'The overall sentiment of the comments (positive, negative, or neutral).'
+    ),
+  positiveKeywords: z
+    .array(z.string())
+    .describe('A list of key positive keywords extracted from the comments.'),
+  negativeKeywords: z
+    .array(z.string())
+    .describe('A list of key negative keywords extracted from the comments.'),
+  comments: z
+    .array(CommentSchema)
+    .describe('A list of analyzed comments from the video.'),
+});
+export type AnalyzeSentimentOutput = z.infer<typeof AnalyzeSentimentOutputSchema>;
+
+// Channel Analysis Types
+const AnalyzeChannelSentimentInputSchema = z.object({
+  channelUrl: z.string().describe('The URL of the YouTube channel to analyze.'),
+});
+export type AnalyzeChannelSentimentInput = z.infer<typeof AnalyzeChannelSentimentInputSchema>;
 
 const VideoAnalysisSchema = z.object({
   videoId: z.string(),
@@ -70,21 +98,41 @@ const ChannelAnalysisSchema = z.object({
 export type AnalyzeChannelSentimentOutput = z.infer<typeof ChannelAnalysisSchema>;
 
 // Cache management functions
-function getCachedResult(channelId: string): any | null {
-  const cached = analysisCache.get(channelId);
+function getCachedResult(key: string): any | null {
+  const cached = analysisCache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
     return cached.result;
   }
   return null;
 }
 
-function setCachedResult(channelId: string, result: any): void {
-  analysisCache.set(channelId, {
+function setCachedResult(key: string, result: any): void {
+  analysisCache.set(key, {
     result,
     timestamp: Date.now()
   });
 }
 
+// Video Analysis Function
+export async function analyzeSentiment(
+  input: AnalyzeSentimentInput
+): Promise<AnalyzeSentimentOutput> {
+  const videoId = extractVideoId(input.videoUrl);
+  if (!videoId) {
+    throw new Error('Invalid YouTube video URL');
+  }
+
+  // Check cache first
+  const cachedResult = getCachedResult(`video_${videoId}`);
+  if (cachedResult) {
+    console.log('Returning cached result for video:', videoId);
+    return cachedResult;
+  }
+
+  return analyzeVideoSentimentFlow({videoId});
+}
+
+// Channel Analysis Function
 export async function analyzeChannelSentiment(
   input: AnalyzeChannelSentimentInput
 ): Promise<AnalyzeChannelSentimentOutput> {
@@ -94,7 +142,7 @@ export async function analyzeChannelSentiment(
   }
 
   // Check cache first
-  const cachedResult = getCachedResult(channelId);
+  const cachedResult = getCachedResult(`channel_${channelId}`);
   if (cachedResult) {
     console.log('Returning cached result for channel:', channelId);
     return cachedResult;
@@ -103,6 +151,34 @@ export async function analyzeChannelSentiment(
   return analyzeChannelSentimentFlow({channelId});
 }
 
+// Helper function to extract video ID
+function extractVideoId(url: string): string | null {
+  const regex = /(?:v=)([^&?]+)/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
+
+// Video Analysis Tools
+const getCommentsTool = ai.defineTool(
+  {
+    name: 'getComments',
+    description: 'Fetches the top comments for a given YouTube video ID.',
+    inputSchema: z.object({
+      videoId: z.string().describe('The ID of the YouTube video.'),
+    }),
+    outputSchema: z.array(
+      z.object({
+        author: z.string(),
+        text: z.string(),
+      })
+    ),
+  },
+  async ({videoId}) => {
+    return getComments(videoId);
+  }
+);
+
+// Channel Analysis Tools
 const getChannelCommentsTool = ai.defineTool(
   {
     name: 'getChannelComments',
@@ -137,7 +213,27 @@ const getChannelCommentsTool = ai.defineTool(
   }
 );
 
-const prompt = ai.definePrompt({
+// Video Analysis Prompt
+const videoPrompt = ai.definePrompt({
+  name: 'analyzeVideoSentimentPrompt',
+  input: {schema: z.object({ videoComments: z.string()})},
+  output: {schema: AnalyzeSentimentOutputSchema},
+  model: 'googleai/gemini-1.5-flash',
+  prompt: `You are a YouTube comment analysis expert. Your task is to analyze the provided comments for the video.
+
+Here are the comments:
+{{{videoComments}}}
+
+Please perform the following actions:
+1. Analyze the fetched comments to determine the overall sentiment (Positive, Negative, or Neutral).
+2. Extract a list of 3-5 key positive keywords from the comments.
+3. Extract a list of 3-5 key negative keywords from the comments.
+4. Select up to 1000 of the most representative comments and analyze their individual sentiment.
+5. Populate the output fields accordingly. If no comments are found, return empty arrays for keywords and comments, and a neutral overall sentiment.`,
+});
+
+// Channel Analysis Prompt
+const channelPrompt = ai.definePrompt({
   name: 'analyzeChannelSentimentPrompt',
   input: {schema: z.object({ channelData: z.string()})},
   output: {schema: ChannelAnalysisSchema},
@@ -187,6 +283,88 @@ Format your response as JSON with the following structure:
 }`,
 });
 
+// Video Analysis Flow
+const analyzeVideoSentimentFlow = ai.defineFlow(
+  {
+    name: 'analyzeVideoSentimentFlow',
+    inputSchema: z.object({videoId: z.string()}),
+    outputSchema: AnalyzeSentimentOutputSchema,
+  },
+  async ({ videoId }) => {
+    console.log('Starting video analysis for:', videoId);
+    
+    // Stage 1: Fetching comments (25%)
+    console.log('Stage 1: Fetching YouTube comments...');
+    const videoComments = await getComments(videoId);
+    console.log(`Fetched ${videoComments.length} comments`);
+
+    if (videoComments.length === 0) {
+      const result = { 
+        overallSentiment: 'Neutral', 
+        positiveKeywords: [], 
+        negativeKeywords: [], 
+        comments: [] 
+      };
+      setCachedResult(`video_${videoId}`, result);
+      return result;
+    }
+
+    // Stage 2: AI Analysis with retry mechanism (75%)
+    console.log('Stage 2: Analyzing comments with AI...');
+    
+    let result;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        const {output} = await videoPrompt({ videoComments: JSON.stringify(videoComments) });
+        result = output || { 
+          overallSentiment: 'Neutral', 
+          positiveKeywords: [], 
+          negativeKeywords: [], 
+          comments: [] 
+        };
+        break; // Success, exit retry loop
+      } catch (error: any) {
+        retryCount++;
+        console.log(`AI Analysis attempt ${retryCount} failed:`, error.message);
+        
+        if (error.message?.includes('503') || error.message?.includes('overloaded')) {
+          if (retryCount < maxRetries) {
+            console.log(`Retrying in ${retryCount * 2} seconds...`);
+            await new Promise(resolve => setTimeout(resolve, retryCount * 2000)); // Exponential backoff
+            continue;
+          } else {
+            console.log('Max retries reached, returning neutral result');
+            result = { 
+              overallSentiment: 'Neutral', 
+              positiveKeywords: [], 
+              negativeKeywords: [], 
+              comments: videoComments.map(c => ({
+                author: c.author,
+                text: c.text,
+                sentiment: 'Neutral' as const
+              }))
+            };
+          }
+        } else {
+          // Non-retryable error, throw it
+          throw error;
+        }
+      }
+    }
+
+    // Stage 3: Caching result (100%)
+    console.log('Stage 3: Caching result...');
+    setCachedResult(`video_${videoId}`, result);
+    
+    console.log('Video analysis completed successfully');
+    return result;
+  }
+);
+
+// Channel Analysis Flow
 const analyzeChannelSentimentFlow = ai.defineFlow(
   {
     name: 'analyzeChannelSentimentFlow',
@@ -214,7 +392,7 @@ const analyzeChannelSentimentFlow = ai.defineFlow(
         totalComments: 0,
         totalVideos: 0,
       };
-      setCachedResult(channelId, result);
+      setCachedResult(`channel_${channelId}`, result);
       return result;
     }
 
@@ -227,7 +405,7 @@ const analyzeChannelSentimentFlow = ai.defineFlow(
     
     while (retryCount < maxRetries) {
       try {
-        const {output} = await prompt({ channelData: JSON.stringify(channelData) });
+        const {output} = await channelPrompt({ channelData: JSON.stringify(channelData) });
         result = output || {
           channelId: channelData.channel.id,
           channelTitle: channelData.channel.title,
@@ -288,7 +466,7 @@ const analyzeChannelSentimentFlow = ai.defineFlow(
 
     // Stage 3: Caching result (100%)
     console.log('Stage 3: Caching result...');
-    setCachedResult(channelId, result);
+    setCachedResult(`channel_${channelId}`, result);
     
     console.log('Channel analysis completed successfully');
     return result;

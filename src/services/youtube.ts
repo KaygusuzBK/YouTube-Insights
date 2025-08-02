@@ -28,35 +28,81 @@ const ChannelSchema = z.object({
 });
 type Channel = z.infer<typeof ChannelSchema>;
 
-// Extract channel ID from various YouTube URL formats
+// Extract channel ID from various YouTube channel URL formats
 export function extractChannelId(url: string): string | null {
+  // Remove query parameters and fragments
+  const cleanUrl = url.split('?')[0].split('#')[0];
+  
+  // Handle different channel URL formats
   const patterns = [
-    /(?:youtube\.com\/channel\/)([^\/\?]+)/,
-    /(?:youtube\.com\/c\/)([^\/\?]+)/,
-    /(?:youtube\.com\/user\/)([^\/\?]+)/,
-    /(?:youtube\.com\/@)([^\/\?]+)/,
+    // youtube.com/@username
+    /youtube\.com\/@([^\/\s]+)/,
+    // youtube.com/channel/UC...
+    /youtube\.com\/channel\/([^\/\s]+)/,
+    // youtube.com/c/username
+    /youtube\.com\/c\/([^\/\s]+)/,
+    // youtube.com/user/username
+    /youtube\.com\/user\/([^\/\s]+)/,
+    // Direct channel ID (UC...)
+    /^([UC][A-Za-z0-9_-]{23})$/,
   ];
-  
+
   for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
+    const match = cleanUrl.match(pattern);
+    if (match) {
+      const extracted = match[1];
+      console.log('Extracted channel identifier:', extracted);
+      return extracted;
+    }
   }
-  
+
+  console.log('No channel ID found in URL:', url);
   return null;
 }
 
-// Get channel information
+// Get channel info by ID or username
 export async function getChannelInfo(channelId: string): Promise<Channel | null> {
   try {
-    const response = await youtube.channels.list({
+    console.log('Fetching channel info for:', channelId);
+    
+    // First try with the ID as-is (might be a channel ID)
+    let response = await youtube.channels.list({
       part: ['snippet', 'statistics'],
       id: [channelId],
       key: apiKey,
     });
 
-    const channel = response.data.items?.[0];
-    if (!channel) return null;
+    let channel = response.data.items?.[0];
+    
+    // If not found, try searching by username (for @username format)
+    if (!channel && channelId.startsWith('@')) {
+      console.log('Trying to find channel by username:', channelId);
+      response = await youtube.search.list({
+        part: ['snippet'],
+        q: channelId,
+        type: ['channel'],
+        maxResults: 1,
+        key: apiKey,
+      });
+      
+      const searchResult = response.data.items?.[0];
+      if (searchResult?.snippet?.channelId) {
+        // Now get full channel info with the found channel ID
+        const channelResponse = await youtube.channels.list({
+          part: ['snippet', 'statistics'],
+          id: [searchResult.snippet.channelId],
+          key: apiKey,
+        });
+        channel = channelResponse.data.items?.[0];
+      }
+    }
 
+    if (!channel) {
+      console.log('Channel not found for ID:', channelId);
+      return null;
+    }
+
+    console.log('Found channel:', channel.snippet?.title);
     return {
       id: channel.id!,
       title: channel.snippet?.title || 'Unknown Channel',

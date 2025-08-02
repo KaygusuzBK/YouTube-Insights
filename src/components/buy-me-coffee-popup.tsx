@@ -74,6 +74,7 @@ export function BuyMeCoffeePopup({ isOpen, onClose }: BuyMeCoffeePopupProps) {
                         src="/buy-me-a-coffee.png"
                         alt="Buy Me a Coffee QR Code"
                         fill
+                        sizes="(max-width: 768px) 100vw, 192px"
                         className="object-contain rounded-lg"
                         onError={() => setImageError(true)}
                         priority
