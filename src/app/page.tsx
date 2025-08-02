@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { analyzeSentiment, type AnalyzeSentimentOutput } from '@/ai/flows/analyze-sentiment';
-import { Sparkles, Clapperboard, Brain, Zap, BarChart3, Target, Loader2 } from 'lucide-react';
+import { analyzeChannelSentiment, type AnalyzeChannelSentimentOutput } from '@/ai/flows/analyze-sentiment';
+import { Sparkles, Clapperboard, Brain, Zap, BarChart3, Target, Loader2, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const [url, setUrl] = useState('');
-  const [analysis, setAnalysis] = useState<AnalyzeSentimentOutput | null>(null);
+  const [analysis, setAnalysis] = useState<AnalyzeChannelSentimentOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCoffeePopup, setShowCoffeePopup] = useState(false);
@@ -38,13 +38,13 @@ export default function Home() {
     setProgress(0);
     setProgressMessage('');
     
-    // Basic URL validation
-    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}/;
-    if (!youtubeRegex.test(url)) {
-      setError('Please enter a valid YouTube video URL.');
+    // Basic URL validation for YouTube channels
+    const youtubeChannelRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(channel\/|c\/|user\/|@)[^\/\s]+|youtu\.be\/[^\/\s]+)/;
+    if (!youtubeChannelRegex.test(url)) {
+      setError('Please enter a valid YouTube channel URL.');
       toast({
         title: 'Invalid URL',
-        description: 'Lütfen geçerli bir YouTube video URL\'si girin.',
+        description: 'Lütfen geçerli bir YouTube kanal URL\'si girin. (Örnek: youtube.com/@channelname)',
         variant: 'destructive'
       })
       return;
@@ -54,18 +54,23 @@ export default function Home() {
 
     try {
       // Progress simulation
-      setProgressMessage('YouTube yorumları alınıyor...');
-      setProgress(25);
+      setProgressMessage('Kanal bilgileri alınıyor...');
+      setProgress(15);
       
       // Small delay to show progress
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      setProgressMessage('AI ile analiz yapılıyor...');
+      setProgressMessage('Kanal videoları taranıyor...');
+      setProgress(30);
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setProgressMessage('Video yorumları toplanıyor...');
       setProgress(50);
       
-      const result = await analyzeSentiment({ videoUrl: url });
+      const result = await analyzeChannelSentiment({ channelUrl: url });
       
-      setProgressMessage('Sonuçlar işleniyor...');
+      setProgressMessage('AI ile analiz yapılıyor...');
       setProgress(75);
       
       // Small delay to show final progress
@@ -76,16 +81,16 @@ export default function Home() {
       
       setAnalysis(result);
       
-      if(result.comments.length === 0){
+      if(result.totalComments === 0){
         toast({
           title: 'Yorum Bulunamadı',
-          description: 'Bu video için yorum bulunamadı veya API anahtarınızda bir sorun olabilir.',
+          description: 'Bu kanal için yorum bulunamadı veya API anahtarınızda bir sorun olabilir.',
           variant: 'destructive'
         })
       } else {
         toast({
-          title: 'Analiz Tamamlandı!',
-          description: `${result.comments.length} yorum başarıyla analiz edildi.`,
+          title: 'Kanal Analizi Tamamlandı!',
+          description: `${result.totalVideos} videodan ${result.totalComments} yorum başarıyla analiz edildi.`,
           variant: 'default'
         })
       }
@@ -133,17 +138,17 @@ export default function Home() {
               <div className="p-1.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
                 <Brain className="h-4 w-4 text-white" />
               </div>
-              <span className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">AI-Powered Analysis</span>
+              <span className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">AI-Powered Channel Analysis</span>
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-r from-slate-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent">
               YouTube
-              <span className="block text-4xl md:text-5xl mt-2 font-medium text-slate-600 dark:text-slate-300">Yorum Analizi</span>
+              <span className="block text-4xl md:text-5xl mt-2 font-medium text-slate-600 dark:text-slate-300">Kanal Analizi</span>
             </h1>
             
             <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
-              Yapay zeka destekli duygu analizi ile YouTube yorumlarınızı analiz edin. 
-              <span className="font-semibold text-slate-800 dark:text-slate-200"> 1000+ yorum</span> üzerinden detaylı içgörüler elde edin.
+              Yapay zeka destekli duygu analizi ile YouTube kanallarınızı analiz edin. 
+              <span className="font-semibold text-slate-800 dark:text-slate-200"> Tüm videoların yorumları</span> üzerinden detaylı içgörüler elde edin.
             </p>
           </div>
 
@@ -153,8 +158,8 @@ export default function Home() {
               <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform">
                 <Zap className="h-6 w-6 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">Hızlı Analiz</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">Saniyeler içinde kapsamlı sonuçlar alın</p>
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">Kapsamlı Analiz</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">Tüm videoların yorumlarını analiz eder</p>
             </div>
             
             <div className="group p-6 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-white/50 dark:border-slate-700/50 hover:bg-white/90 dark:hover:bg-slate-800/90 transition-all duration-300 hover:scale-105 hover:shadow-xl">
@@ -169,16 +174,16 @@ export default function Home() {
               <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform">
                 <BarChart3 className="h-6 w-6 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">Detaylı Rapor</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">Kapsamlı analiz ve görselleştirme</p>
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">Video Bazlı</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">Her video için ayrı analiz</p>
             </div>
             
             <div className="group p-6 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-white/50 dark:border-slate-700/50 hover:bg-white/90 dark:hover:bg-slate-800/90 transition-all duration-300 hover:scale-105 hover:shadow-xl">
               <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform">
-                <Target className="h-6 w-6 text-white" />
+                <Users className="h-6 w-6 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">Hedef Odaklı</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">İş hedeflerinize uygun içgörüler</p>
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">Kanal Odaklı</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">Kanal geneli trend analizi</p>
             </div>
           </div>
 
@@ -186,25 +191,25 @@ export default function Home() {
           <Card className="mb-16 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-2xl shadow-blue-500/10 dark:shadow-blue-500/20">
             <CardHeader className="text-center pb-8">
               <CardTitle className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-blue-800 dark:from-white dark:to-blue-200 bg-clip-text text-transparent">
-                Analiz Başlatın
+                Kanal Analizi Başlatın
               </CardTitle>
               <CardDescription className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-                Analiz etmek istediğiniz YouTube videosunun bağlantısını sağlayın ve yapay zeka destekli analizi başlatın.
+                Analiz etmek istediğiniz YouTube kanalının bağlantısını sağlayın ve yapay zeka destekli analizi başlatın.
               </CardDescription>
             </CardHeader>
             <CardContent className="px-8 pb-8">
               <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto">
                 <div className="relative flex-grow">
-                  <Clapperboard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                   <Input
                     type="url"
-                    placeholder="https://www.youtube.com/watch?v=..."
+                    placeholder="https://www.youtube.com/@channelname"
                     className="pl-12 h-14 text-base border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 transition-colors bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm rounded-xl"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     disabled={isLoading}
                     required
-                    aria-label="YouTube video URL"
+                    aria-label="YouTube channel URL"
                   />
                 </div>
                 <Button 
