@@ -47,6 +47,44 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
   const [keywordFilter, setKeywordFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // Filtreleme mantığı - hooks'ları en üstte çağırıyoruz
+  const filteredComments = useMemo(() => {
+    if (!analysis?.comments) return [];
+    
+    return analysis.comments.filter(comment => {
+      // Sentiment filtresi
+      if (sentimentFilter !== 'all' && comment.sentiment.toLowerCase() !== sentimentFilter.toLowerCase()) {
+        return false;
+      }
+      
+      // Keyword filtresi
+      if (keywordFilter) {
+        const hasKeyword = comment.text.toLowerCase().includes(keywordFilter.toLowerCase()) ||
+                          analysis.positiveKeywords.some(kw => comment.text.toLowerCase().includes(kw.toLowerCase())) ||
+                          analysis.negativeKeywords.some(kw => comment.text.toLowerCase().includes(kw.toLowerCase()));
+        if (!hasKeyword) return false;
+      }
+      
+      // Arama filtresi
+      if (searchQuery) {
+        const searchLower = searchQuery.toLowerCase();
+        const matchesSearch = comment.text.toLowerCase().includes(searchLower) ||
+                             comment.author.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+      
+      return true;
+    });
+  }, [analysis, sentimentFilter, keywordFilter, searchQuery]);
+
+  const clearFilters = () => {
+    setSentimentFilter('all');
+    setKeywordFilter('');
+    setSearchQuery('');
+  };
+
+  const hasActiveFilters = sentimentFilter !== 'all' || keywordFilter || searchQuery;
+
   if (isLoading) {
     return <LoadingSkeleton />;
   }
@@ -66,42 +104,6 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
   }
   
   const { overallSentiment, positiveKeywords, negativeKeywords, comments } = analysis;
-
-  // Filtreleme mantığı
-  const filteredComments = useMemo(() => {
-    return comments.filter(comment => {
-      // Sentiment filtresi
-      if (sentimentFilter !== 'all' && comment.sentiment.toLowerCase() !== sentimentFilter.toLowerCase()) {
-        return false;
-      }
-      
-      // Keyword filtresi
-      if (keywordFilter) {
-        const hasKeyword = comment.text.toLowerCase().includes(keywordFilter.toLowerCase()) ||
-                          positiveKeywords.some(kw => comment.text.toLowerCase().includes(kw.toLowerCase())) ||
-                          negativeKeywords.some(kw => comment.text.toLowerCase().includes(kw.toLowerCase()));
-        if (!hasKeyword) return false;
-      }
-      
-      // Arama filtresi
-      if (searchQuery) {
-        const searchLower = searchQuery.toLowerCase();
-        const matchesSearch = comment.text.toLowerCase().includes(searchLower) ||
-                             comment.author.toLowerCase().includes(searchLower);
-        if (!matchesSearch) return false;
-      }
-      
-      return true;
-    });
-  }, [comments, sentimentFilter, keywordFilter, searchQuery, positiveKeywords, negativeKeywords]);
-
-  const clearFilters = () => {
-    setSentimentFilter('all');
-    setKeywordFilter('');
-    setSearchQuery('');
-  };
-
-  const hasActiveFilters = sentimentFilter !== 'all' || keywordFilter || searchQuery;
 
   return (
     <div className="space-y-8 animate-in fade-in-0 duration-700">
