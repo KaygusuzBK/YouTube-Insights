@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Frown, Meh, Smile, ThumbsDown, ThumbsUp } from "lucide-react";
+import { AlertCircle, Frown, Meh, Smile, ThumbsDown, ThumbsUp, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 interface SentimentResultsProps {
   isLoading: boolean;
@@ -14,12 +14,28 @@ interface SentimentResultsProps {
 
 const SentimentIcon = ({ sentiment }: { sentiment: string }) => {
   if (sentiment.toLowerCase().includes('positive')) {
-    return <Smile className="h-8 w-8 text-positive" />;
+    return <div className="p-3 bg-positive/10 rounded-full">
+      <Smile className="h-8 w-8 text-positive" />
+    </div>;
   }
   if (sentiment.toLowerCase().includes('negative')) {
-    return <Frown className="h-8 w-8 text-destructive" />;
+    return <div className="p-3 bg-destructive/10 rounded-full">
+      <Frown className="h-8 w-8 text-destructive" />
+    </div>;
   }
-  return <Meh className="h-8 w-8 text-yellow-500" />;
+  return <div className="p-3 bg-yellow-500/10 rounded-full">
+    <Meh className="h-8 w-8 text-yellow-500" />
+  </div>;
+};
+
+const SentimentTrendIcon = ({ sentiment }: { sentiment: string }) => {
+  if (sentiment.toLowerCase().includes('positive')) {
+    return <TrendingUp className="h-5 w-5 text-positive" />;
+  }
+  if (sentiment.toLowerCase().includes('negative')) {
+    return <TrendingDown className="h-5 w-5 text-destructive" />;
+  }
+  return <Minus className="h-5 w-5 text-yellow-500" />;
 };
 
 export function SentimentResults({ isLoading, analysis, error }: SentimentResultsProps) {
@@ -27,9 +43,9 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
     return <LoadingSkeleton />;
   }
 
-  if (error && !analysis) { // Only show error if there are no results to display
+  if (error && !analysis) {
     return (
-      <Alert variant="destructive">
+      <Alert variant="destructive" className="animate-in fade-in-0 duration-500">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Analysis Error</AlertTitle>
         <AlertDescription>{error}</AlertDescription>
@@ -44,70 +60,138 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
   const { overallSentiment, positiveKeywords, negativeKeywords, comments } = analysis;
 
   return (
-    <div className="space-y-8 animate-in fade-in-0 duration-500">
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="md:col-span-1 shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle>Genel Duygu</CardTitle>
+    <div className="space-y-8 animate-in fade-in-0 duration-700">
+      {/* Overall Sentiment Card */}
+      <Card className="card-hover glass-effect border-border/50 shadow-xl">
+        <CardHeader className="text-center pb-6">
+          <CardTitle className="text-2xl font-headline text-gradient">Genel Duygu Analizi</CardTitle>
+          <CardDescription className="text-base">
+            Yapay zeka algoritmasının yorumları analiz etmesi sonucu elde edilen genel duygu durumu
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center gap-6">
             <SentimentIcon sentiment={overallSentiment} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{overallSentiment}</div>
-            <p className="text-xs text-muted-foreground">Yorumların yapay zeka analizine göre</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle>Pozitif Anahtar Kelimeler</CardTitle>
-            <ThumbsUp className="h-4 w-4 text-muted-foreground" />
+            <div className="text-center">
+              <div className="text-3xl font-bold font-headline mb-2">{overallSentiment}</div>
+              <p className="text-muted-foreground">Yorumların yapay zeka analizine göre</p>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <SentimentTrendIcon sentiment={overallSentiment} />
+              <span>Trend: {overallSentiment.toLowerCase().includes('positive') ? 'Yükseliş' : overallSentiment.toLowerCase().includes('negative') ? 'Düşüş' : 'Stabil'}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Keywords Cards */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="card-hover glass-effect border-border/50 shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <CardTitle className="text-lg font-headline">Pozitif Anahtar Kelimeler</CardTitle>
+            <div className="p-2 bg-positive/10 rounded-lg">
+              <ThumbsUp className="h-5 w-5 text-positive" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {positiveKeywords.length > 0 ? positiveKeywords.map((keyword) => (
-                <Badge key={keyword} variant="positive">{keyword}</Badge>
-              )) : <p className="text-sm text-muted-foreground">Bulunamadı</p>}
+              {positiveKeywords.length > 0 ? positiveKeywords.map((keyword, index) => (
+                <Badge 
+                  key={keyword} 
+                  variant="secondary" 
+                  className="bg-positive/10 text-positive border-positive/20 hover:bg-positive/20 transition-colors animate-in fade-in-0 duration-300"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {keyword}
+                </Badge>
+              )) : (
+                <p className="text-sm text-muted-foreground italic">Pozitif anahtar kelime bulunamadı</p>
+              )}
             </div>
           </CardContent>
         </Card>
-        <Card className="shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle>Negatif Anahtar Kelimeler</CardTitle>
-            <ThumbsDown className="h-4 w-4 text-muted-foreground" />
+
+        <Card className="card-hover glass-effect border-border/50 shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <CardTitle className="text-lg font-headline">Negatif Anahtar Kelimeler</CardTitle>
+            <div className="p-2 bg-destructive/10 rounded-lg">
+              <ThumbsDown className="h-5 w-5 text-destructive" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {negativeKeywords.length > 0 ? negativeKeywords.map((keyword) => (
-                <Badge key={keyword} variant="destructive">{keyword}</Badge>
-              )) : <p className="text-sm text-muted-foreground">Bulunamadı</p>}
+              {negativeKeywords.length > 0 ? negativeKeywords.map((keyword, index) => (
+                <Badge 
+                  key={keyword} 
+                  variant="secondary" 
+                  className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20 transition-colors animate-in fade-in-0 duration-300"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {keyword}
+                </Badge>
+              )) : (
+                <p className="text-sm text-muted-foreground italic">Negatif anahtar kelime bulunamadı</p>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="shadow-md">
+      {/* Comments Analysis */}
+      <Card className="card-hover glass-effect border-border/50 shadow-xl">
         <CardHeader>
-          <CardTitle>Yorum Analizi Dökümü</CardTitle>
-          <CardDescription>Videonun yorumlarından bazılarının duygu analizi.</CardDescription>
+          <CardTitle className="text-xl font-headline text-gradient">Yorum Analizi Dökümü</CardTitle>
+          <CardDescription className="text-base">
+            Videonun yorumlarından bazılarının detaylı duygu analizi ve içerik değerlendirmesi.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {comments.length > 0 ? comments.map((comment, index) => (
-            <div key={index} className="flex gap-4">
-              <Avatar>
-                <AvatarImage src={`https://placehold.co/40x40.png?text=${comment.author.substring(0,2)}`} data-ai-hint="person avatar" />
-                <AvatarFallback>{comment.author.substring(0, 2)}</AvatarFallback>
+            <div 
+              key={index} 
+              className="flex gap-4 p-4 rounded-lg bg-card/30 backdrop-blur-sm border border-border/30 hover:bg-card/50 transition-all duration-300 animate-in fade-in-0 duration-500"
+              style={{ animationDelay: `${index * 150}ms` }}
+            >
+              <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-md">
+                <AvatarImage src={`https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000)}?w=48&h=48&fit=crop&crop=face`} />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-semibold">
+                  {comment.author.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold">{comment.author}</p>
-                  {comment.sentiment === 'Positive' && <Badge variant="positive" className="text-xs">Pozitif</Badge>}
-                  {comment.sentiment === 'Negative' && <Badge variant="destructive" className="text-xs">Negatif</Badge>}
-                  {comment.sentiment === 'Neutral' && <Badge variant="secondary" className="text-xs">Nötr</Badge>}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-semibold text-sm truncate">{comment.author}</p>
+                  <div className="flex items-center gap-2">
+                    {comment.sentiment === 'Positive' && (
+                      <Badge variant="secondary" className="bg-positive/10 text-positive border-positive/20 text-xs">
+                        <Smile className="h-3 w-3 mr-1" />
+                        Pozitif
+                      </Badge>
+                    )}
+                    {comment.sentiment === 'Negative' && (
+                      <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
+                        <Frown className="h-3 w-3 mr-1" />
+                        Negatif
+                      </Badge>
+                    )}
+                    {comment.sentiment === 'Neutral' && (
+                      <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs">
+                        <Meh className="h-3 w-3 mr-1" />
+                        Nötr
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">{comment.text}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{comment.text}</p>
               </div>
             </div>
           )) : (
-            <p className="text-sm text-muted-foreground text-center">Bu video için analiz edilecek yorum bulunamadı.</p>
+            <div className="text-center py-8">
+              <div className="p-4 bg-muted/50 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <AlertCircle className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground">Bu video için analiz edilecek yorum bulunamadı.</p>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -116,21 +200,68 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
 }
 
 const LoadingSkeleton = () => (
-  <div className="space-y-8">
-    <div className="grid gap-4 md:grid-cols-3">
-      <Card className="md:col-span-1"><CardHeader><Skeleton className="h-6 w-2/3" /></CardHeader><CardContent><Skeleton className="h-8 w-1/2" /></CardContent></Card>
-      <Card><CardHeader><Skeleton className="h-6 w-2/3" /></CardHeader><CardContent className="flex flex-wrap gap-2"><Skeleton className="h-6 w-16" /><Skeleton className="h-6 w-20" /><Skeleton className="h-6 w-12" /></CardContent></Card>
-      <Card><CardHeader><Skeleton className="h-6 w-2/3" /></CardHeader><CardContent className="flex flex-wrap gap-2"><Skeleton className="h-6 w-16" /><Skeleton className="h-6 w-20" /><Skeleton className="h-6 w-12" /></CardContent></Card>
+  <div className="space-y-8 animate-in fade-in-0 duration-500">
+    {/* Overall Sentiment Skeleton */}
+    <Card className="glass-effect border-border/50">
+      <CardHeader className="text-center pb-6">
+        <Skeleton className="h-8 w-64 mx-auto" />
+        <Skeleton className="h-4 w-96 mx-auto" />
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col items-center gap-6">
+          <Skeleton className="h-16 w-16 rounded-full" />
+          <div className="text-center">
+            <Skeleton className="h-10 w-32 mx-auto mb-2" />
+            <Skeleton className="h-4 w-48 mx-auto" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    {/* Keywords Skeleton */}
+    <div className="grid gap-6 md:grid-cols-2">
+      <Card className="glass-effect border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-9 w-9 rounded-lg" />
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-6 w-20" />
+          <Skeleton className="h-6 w-12" />
+          <Skeleton className="h-6 w-18" />
+        </CardContent>
+      </Card>
+      <Card className="glass-effect border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-9 w-9 rounded-lg" />
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-6 w-20" />
+          <Skeleton className="h-6 w-12" />
+        </CardContent>
+      </Card>
     </div>
-    <Card>
-      <CardHeader><Skeleton className="h-8 w-1/3" /></CardHeader>
+
+    {/* Comments Skeleton */}
+    <Card className="glass-effect border-border/50">
+      <CardHeader>
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-4 w-80" />
+      </CardHeader>
       <CardContent className="space-y-6">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="flex gap-4 items-center">
-            <Skeleton className="h-10 w-10 rounded-full" />
+          <div key={i} className="flex gap-4 items-start">
+            <Skeleton className="h-12 w-12 rounded-full flex-shrink-0" />
             <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-1/4" />
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-5 w-16" />
+              </div>
               <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
             </div>
           </div>
         ))}
