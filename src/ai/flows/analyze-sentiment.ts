@@ -90,14 +90,13 @@ const getCommentsTool = ai.defineTool(
 
 const prompt = ai.definePrompt({
   name: 'analyzeSentimentPrompt',
-  input: {schema: z.object({ videoComments: z.array(z.any())})},
+  input: {schema: z.object({ videoComments: z.string()})},
   output: {schema: AnalyzeSentimentOutputSchema},
-  tools: [getCommentsTool],
   model: 'googleai/gemini-1.5-flash',
   prompt: `You are a YouTube comment analysis expert. Your task is to analyze the provided comments for the video.
 
 Here are the comments:
-{{{JSON.stringify videoComments}}}
+{{{videoComments}}}
 
 Please perform the following actions:
 1. Analyze the fetched comments to determine the overall sentiment (Positive, Negative, or Neutral).
@@ -125,7 +124,7 @@ const analyzeSentimentFlow = ai.defineFlow(
       };
     }
 
-    const {output} = await prompt({ videoComments });
+    const {output} = await prompt({ videoComments: JSON.stringify(videoComments) });
     return output || { overallSentiment: 'Neutral', positiveKeywords: [], negativeKeywords: [], comments: [] };
   }
 );
