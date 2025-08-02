@@ -14,7 +14,7 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
-import {getComments, getChannelComments, extractChannelId, extractVideoId} from '@/services/youtube';
+import {getComments, getChannelComments, extractChannelId} from '@/services/youtube';
 
 const apiKey = 'AIzaSyB446sE3RuxjZb7iJHvz_QiY3ltVYB0ZQ8';
 
@@ -299,7 +299,7 @@ const analyzeVideoSentimentFlow = ai.defineFlow(
     console.log(`Fetched ${videoComments.length} comments`);
 
     if (videoComments.length === 0) {
-      const result = { 
+      const result: AnalyzeSentimentOutput = { 
         overallSentiment: 'Neutral', 
         positiveKeywords: [], 
         negativeKeywords: [], 
@@ -312,7 +312,12 @@ const analyzeVideoSentimentFlow = ai.defineFlow(
     // Stage 2: AI Analysis with retry mechanism (75%)
     console.log('Stage 2: Analyzing comments with AI...');
     
-    let result;
+    let result: AnalyzeSentimentOutput = { 
+      overallSentiment: 'Neutral', 
+      positiveKeywords: [], 
+      negativeKeywords: [], 
+      comments: [] 
+    };
     let retryCount = 0;
     const maxRetries = 3;
     
@@ -380,7 +385,7 @@ const analyzeChannelSentimentFlow = ai.defineFlow(
     console.log(`Fetched data for ${channelData.videos.length} videos`);
 
     if (channelData.videos.length === 0) {
-      const result = {
+      const result: AnalyzeChannelSentimentOutput = {
         channelId: channelData.channel.id,
         channelTitle: channelData.channel.title,
         subscriberCount: channelData.channel.subscriberCount,
@@ -399,7 +404,18 @@ const analyzeChannelSentimentFlow = ai.defineFlow(
     // Stage 2: AI Analysis with retry mechanism (75%)
     console.log('Stage 2: Analyzing channel with AI...');
     
-    let result;
+    let result: AnalyzeChannelSentimentOutput = {
+      channelId: channelData.channel.id,
+      channelTitle: channelData.channel.title,
+      subscriberCount: channelData.channel.subscriberCount,
+      videoCount: channelData.channel.videoCount,
+      overallSentiment: 'Neutral',
+      positiveKeywords: [],
+      negativeKeywords: [],
+      videos: [],
+      totalComments: 0,
+      totalVideos: 0,
+    };
     let retryCount = 0;
     const maxRetries = 3;
     

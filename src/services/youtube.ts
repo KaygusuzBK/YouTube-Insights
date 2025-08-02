@@ -28,6 +28,34 @@ const ChannelSchema = z.object({
 });
 type Channel = z.infer<typeof ChannelSchema>;
 
+// Extract video ID from YouTube video URL
+export function extractVideoId(url: string): string | null {
+  // Remove query parameters and fragments
+  const cleanUrl = url.split('?')[0].split('#')[0];
+  
+  // Handle different video URL formats
+  const patterns = [
+    // youtube.com/watch?v=VIDEO_ID
+    /youtube\.com\/watch\?v=([^&\s]+)/,
+    // youtu.be/VIDEO_ID
+    /youtu\.be\/([^&\s]+)/,
+    // Direct video ID (11 characters)
+    /^([A-Za-z0-9_-]{11})$/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = cleanUrl.match(pattern);
+    if (match) {
+      const extracted = match[1];
+      console.log('Extracted video ID:', extracted);
+      return extracted;
+    }
+  }
+
+  console.log('No video ID found in URL:', url);
+  return null;
+}
+
 // Extract channel ID from various YouTube channel URL formats
 export function extractChannelId(url: string): string | null {
   // Remove query parameters and fragments
@@ -77,7 +105,7 @@ export async function getChannelInfo(channelId: string): Promise<Channel | null>
     // If not found, try searching by username (for @username format)
     if (!channel && channelId.startsWith('@')) {
       console.log('Trying to find channel by username:', channelId);
-      response = await youtube.search.list({
+      const searchResponse = await youtube.search.list({
         part: ['snippet'],
         q: channelId,
         type: ['channel'],
@@ -85,12 +113,12 @@ export async function getChannelInfo(channelId: string): Promise<Channel | null>
         key: apiKey,
       });
       
-      const searchResult = response.data.items?.[0];
-      if (searchResult?.snippet?.channelId) {
+      const searchResult = searchResponse.data.items?.[0];
+      if (searchResult?.id?.channelId) {
         // Now get full channel info with the found channel ID
         const channelResponse = await youtube.channels.list({
           part: ['snippet', 'statistics'],
-          id: [searchResult.snippet.channelId],
+          id: [searchResult.id.channelId],
           key: apiKey,
         });
         channel = channelResponse.data.items?.[0];

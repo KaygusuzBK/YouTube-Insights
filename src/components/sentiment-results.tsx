@@ -72,11 +72,15 @@ export function SentimentResults({ isLoading, analysis, error, type }: Sentiment
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(comment =>
-        comment.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        comment.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (comment.videoTitle && comment.videoTitle.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
+      filtered = filtered.filter(comment => {
+        const hasText = comment.text.toLowerCase().includes(searchTerm.toLowerCase());
+        const hasAuthor = comment.author.toLowerCase().includes(searchTerm.toLowerCase());
+        const hasVideoTitle = 'videoTitle' in comment && comment.videoTitle && 
+          typeof comment.videoTitle === 'string' &&
+          comment.videoTitle.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        return hasText || hasAuthor || hasVideoTitle;
+      });
     }
 
     // Sentiment filter
@@ -86,7 +90,7 @@ export function SentimentResults({ isLoading, analysis, error, type }: Sentiment
 
     // Video filter (for channel analysis)
     if (selectedVideo && type === 'channel' && isChannelAnalysis(analysis)) {
-      filtered = filtered.filter(comment => comment.videoId === selectedVideo);
+      filtered = filtered.filter(comment => 'videoId' in comment && comment.videoId === selectedVideo);
     }
 
     return filtered;
@@ -510,16 +514,21 @@ export function SentimentResults({ isLoading, analysis, error, type }: Sentiment
             {filteredComments.map((comment, index) => (
               <div key={index} className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {comment.author}
-                    </span>
-                    {comment.videoTitle && (
-                      <Badge variant="outline" className="text-xs">
-                        {comment.videoTitle.substring(0, 20)}...
-                      </Badge>
-                    )}
-                  </div>
+                                     <div className="flex items-center gap-2">
+                     <span className="font-semibold text-slate-800 dark:text-slate-200">
+                       {comment.author}
+                     </span>
+                     {(() => {
+                       if ('videoTitle' in comment && comment.videoTitle && typeof comment.videoTitle === 'string') {
+                         return (
+                           <Badge variant="outline" className="text-xs">
+                             {comment.videoTitle.substring(0, 20)}...
+                           </Badge>
+                         );
+                       }
+                       return null;
+                     })()}
+                   </div>
                   <div className="flex items-center gap-2">
                     {getSentimentIcon(comment.sentiment)}
                     <Badge className={`text-xs ${getSentimentColor(comment.sentiment)}`}>
