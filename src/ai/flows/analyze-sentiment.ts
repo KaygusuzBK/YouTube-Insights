@@ -90,21 +90,21 @@ const getCommentsTool = ai.defineTool(
 
 const prompt = ai.definePrompt({
   name: 'analyzeSentimentPrompt',
-  input: {schema: z.object({videoId: z.string()})},
+  input: {schema: z.object({ videoComments: z.array(z.any())})},
   output: {schema: AnalyzeSentimentOutputSchema},
   tools: [getCommentsTool],
   model: 'googleai/gemini-1.5-flash',
-  prompt: `You are a YouTube comment analysis expert. Your task is to analyze the comments for the given video ID.
+  prompt: `You are a YouTube comment analysis expert. Your task is to analyze the provided comments for the video.
 
-Video ID: {{{videoId}}}
+Here are the comments:
+{{{JSON.stringify videoComments}}}
 
 Please perform the following actions:
-1. Use the getComments tool to fetch the comments for the video.
-2. Analyze the fetched comments to determine the overall sentiment (Positive, Negative, or Neutral).
-3. Extract a list of 3-5 key positive keywords from the comments.
-4. Extract a list of 3-5 key negative keywords from the comments.
-5. Select up to 4 of the most representative comments and analyze their individual sentiment.
-6. Populate the output fields accordingly. If no comments are found, return empty arrays for keywords and comments, and a neutral overall sentiment.`,
+1. Analyze the fetched comments to determine the overall sentiment (Positive, Negative, or Neutral).
+2. Extract a list of 3-5 key positive keywords from the comments.
+3. Extract a list of 3-5 key negative keywords from the comments.
+4. Select up to 4 of the most representative comments and analyze their individual sentiment.
+5. Populate the output fields accordingly. If no comments are found, return empty arrays for keywords and comments, and a neutral overall sentiment.`,
 });
 
 const analyzeSentimentFlow = ai.defineFlow(
@@ -113,8 +113,19 @@ const analyzeSentimentFlow = ai.defineFlow(
     inputSchema: z.object({videoId: z.string()}),
     outputSchema: AnalyzeSentimentOutputSchema,
   },
-  async (input) => {
-    const {output} = await prompt(input);
+  async ({ videoId }) => {
+    const videoComments = await getComments(videoId);
+
+    if (videoComments.length === 0) {
+      return { 
+        overallSentiment: 'Neutral', 
+        positiveKeywords: [], 
+        negativeKeywords: [], 
+        comments: [] 
+      };
+    }
+
+    const {output} = await prompt({ videoComments });
     return output || { overallSentiment: 'Neutral', positiveKeywords: [], negativeKeywords: [], comments: [] };
   }
 );
