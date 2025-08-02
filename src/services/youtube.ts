@@ -2,6 +2,7 @@ import {google} from 'googleapis';
 import {z} from 'zod';
 
 const youtube = google.youtube('v3');
+const apiKey = 'AIzaSyB446sE3RuxjZb7iJHvz_QiY3ltVYB0ZQ8';
 
 const CommentSchema = z.object({
   author: z.string(),
@@ -10,19 +11,14 @@ const CommentSchema = z.object({
 type Comment = z.infer<typeof CommentSchema>;
 
 export async function getComments(videoId: string): Promise<Comment[]> {
-  const apiKey = 'AIzaSyB446sE3RuxjZb7iJHvz_QiY3ltVYB0ZQ8';
-  if (!apiKey) {
-    // This should not happen given the key is hardcoded, but it's good practice.
-    throw new Error('YOUTUBE_API_KEY is not set.');
-  }
 
   try {
     const response = await youtube.commentThreads.list({
-      auth: apiKey, // Use 'auth' instead of 'key' for authentication
       part: ['snippet'],
       videoId: videoId,
       maxResults: 20, // Fetch top 20 comment threads
       order: 'relevance',
+      key: apiKey,
     });
 
     const commentThreads = response.data.items;
