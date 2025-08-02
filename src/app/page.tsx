@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { analyzeSentiment, type AnalyzeSentimentOutput } from '@/ai/flows/analyze-sentiment';
-import { Sparkles, Clapperboard, TrendingUp, Brain, Zap, BarChart3, Users, Target } from 'lucide-react';
+import { Sparkles, Clapperboard, Brain, Zap, BarChart3, Target } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
