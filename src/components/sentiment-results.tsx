@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Frown, Meh, Smile, ThumbsDown, ThumbsUp, TrendingUp, TrendingDown, Minus, Search, Filter, X } from "lucide-react";
 import { useState, useMemo } from "react";
-import { Virtualizer } from 'virtua';
 
 interface SentimentResultsProps {
   isLoading: boolean;
@@ -306,48 +305,49 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
           {console.log('Rendering comments section, filteredComments:', filteredComments.length, 'displayedComments:', displayedComments.length)}
           {filteredComments.length > 0 ? (
             <div className="space-y-4">
-              <div className="h-[600px] border border-border/30 rounded-lg">
-                <Virtualizer
-                  items={displayedComments}
-                  itemContent={(index, comment) => (
-                    <div className="p-4 border-b border-border/30 last:border-b-0 hover:bg-card/30 transition-colors">
-                      <div className="flex gap-4">
-                        <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-md flex-shrink-0">
-                          <AvatarImage src={`https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000)}?w=48&h=48&fit=crop&crop=face`} />
-                          <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-semibold">
-                            {comment.author.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="font-semibold text-sm truncate">{comment.author}</p>
-                            <div className="flex items-center gap-2">
-                              {comment.sentiment === 'Positive' && (
-                                <Badge variant="secondary" className="bg-positive/10 text-positive border-positive/20 text-xs">
-                                  <Smile className="h-3 w-3 mr-1" />
-                                  Pozitif
-                                </Badge>
-                              )}
-                              {comment.sentiment === 'Negative' && (
-                                <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
-                                  <Frown className="h-3 w-3 mr-1" />
-                                  Negatif
-                                </Badge>
-                              )}
-                              {comment.sentiment === 'Neutral' && (
-                                <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs">
-                                  <Meh className="h-3 w-3 mr-1" />
-                                  Nötr
-                                </Badge>
-                              )}
-                            </div>
+              {/* Yorumlar Listesi */}
+              <div className="max-h-[600px] overflow-y-auto border border-border/30 rounded-lg">
+                {displayedComments.map((comment, index) => (
+                  <div 
+                    key={index} 
+                    className="p-4 border-b border-border/30 last:border-b-0 hover:bg-card/30 transition-colors"
+                  >
+                    <div className="flex gap-4">
+                      <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-md flex-shrink-0">
+                        <AvatarImage src={`https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000)}?w=48&h=48&fit=crop&crop=face`} />
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-semibold">
+                          {comment.author.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-semibold text-sm truncate">{comment.author}</p>
+                          <div className="flex items-center gap-2">
+                            {comment.sentiment === 'Positive' && (
+                              <Badge variant="secondary" className="bg-positive/10 text-positive border-positive/20 text-xs">
+                                <Smile className="h-3 w-3 mr-1" />
+                                Pozitif
+                              </Badge>
+                            )}
+                            {comment.sentiment === 'Negative' && (
+                              <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
+                                <Frown className="h-3 w-3 mr-1" />
+                                Negatif
+                              </Badge>
+                            )}
+                            {comment.sentiment === 'Neutral' && (
+                              <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs">
+                                <Meh className="h-3 w-3 mr-1" />
+                                Nötr
+                              </Badge>
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground leading-relaxed">{comment.text}</p>
                         </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{comment.text}</p>
                       </div>
                     </div>
-                  )}
-                />
+                  </div>
+                ))}
               </div>
               
               {/* Devamını Gör Butonu */}
