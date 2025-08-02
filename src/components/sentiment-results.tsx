@@ -48,37 +48,37 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="md:col-span-1 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Overall Sentiment</CardTitle>
+            <CardTitle className="text-sm font-medium">Genel Duygu</CardTitle>
             <SentimentIcon sentiment={overallSentiment} />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{overallSentiment}</div>
-            <p className="text-xs text-muted-foreground">Based on AI analysis of comments</p>
+            <p className="text-xs text-muted-foreground">Yorumların yapay zeka analizine göre</p>
           </CardContent>
         </Card>
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Positive Keywords</CardTitle>
+            <CardTitle className="text-sm font-medium">Pozitif Anahtar Kelimeler</CardTitle>
             <ThumbsUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {positiveKeywords.length > 0 ? positiveKeywords.map((keyword) => (
                 <Badge key={keyword} variant="positive">{keyword}</Badge>
-              )) : <p className="text-sm text-muted-foreground">None found</p>}
+              )) : <p className="text-sm text-muted-foreground">Bulunamadı</p>}
             </div>
           </CardContent>
         </Card>
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Negative Keywords</CardTitle>
+            <CardTitle className="text-sm font-medium">Negatif Anahtar Kelimeler</CardTitle>
             <ThumbsDown className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
+          </Header>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {negativeKeywords.length > 0 ? negativeKeywords.map((keyword) => (
                 <Badge key={keyword} variant="destructive">{keyword}</Badge>
-              )) : <p className="text-sm text-muted-foreground">None found</p>}
+              )) : <p className="text-sm text-muted-foreground">Bulunamadı</p>}
             </div>
           </CardContent>
         </Card>
@@ -86,11 +86,11 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
 
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className="font-headline">Comment Analysis Breakdown</CardTitle>
-          <CardDescription>AI-generated sample comments based on the video's topic.</CardDescription>
+          <CardTitle className="font-headline">Yorum Analizi Dökümü</CardTitle>
+          <CardDescription>Videonun yorumlarından bazılarının duygu analizi.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {comments.map((comment, index) => (
+          {comments.length > 0 ? comments.map((comment, index) => (
             <div key={index} className="flex gap-4">
               <Avatar>
                 <AvatarImage src={`https://placehold.co/40x40.png?text=${comment.author.substring(0,2)}`} data-ai-hint="person avatar" />
@@ -99,14 +99,16 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold">{comment.author}</p>
-                  {comment.sentiment === 'Positive' && <Badge variant="positive" className="text-xs">Positive</Badge>}
-                  {comment.sentiment === 'Negative' && <Badge variant="destructive" className="text-xs">Negative</Badge>}
-                  {comment.sentiment === 'Neutral' && <Badge variant="secondary" className="text-xs">Neutral</Badge>}
+                  {comment.sentiment === 'Positive' && <Badge variant="positive" className="text-xs">Pozitif</Badge>}
+                  {comment.sentiment === 'Negative' && <Badge variant="destructive" className="text-xs">Negatif</Badge>}
+                  {comment.sentiment === 'Neutral' && <Badge variant="secondary" className="text-xs">Nötr</Badge>}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">{comment.text}</p>
               </div>
             </div>
-          ))}
+          )) : (
+            <p className="text-sm text-muted-foreground text-center">Bu video için analiz edilecek yorum bulunamadı.</p>
+          )}
         </CardContent>
       </Card>
     </div>

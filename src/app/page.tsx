@@ -28,7 +28,7 @@ export default function Home() {
       setError('Please enter a valid YouTube video URL.');
       toast({
         title: 'Invalid URL',
-        description: 'Please enter a valid YouTube video URL.',
+        description: 'Lütfen geçerli bir YouTube video URL\'si girin.',
         variant: 'destructive'
       })
       return;
@@ -39,12 +39,20 @@ export default function Home() {
     try {
       const result = await analyzeSentiment({ videoUrl: url });
       setAnalysis(result);
+      if(result.comments.length === 0){
+        toast({
+          title: 'Yorum Bulunamadı',
+          description: 'Bu video için yorum bulunamadı veya API anahtarınızda bir sorun olabilir.',
+          variant: 'destructive'
+        })
+      }
     } catch (e) {
       console.error(e);
-      setError('An error occurred during analysis. Please try again.');
+      const errorMessage = e instanceof Error ? e.message : 'An error occurred during analysis. Please try again.';
+      setError(errorMessage);
       toast({
-        title: 'Analysis Failed',
-        description: 'An error occurred while analyzing the video comments.',
+        title: 'Analiz Başarısız',
+        description: errorMessage,
         variant: 'destructive'
       })
     } finally {
@@ -58,16 +66,16 @@ export default function Home() {
       <main className="flex-1">
         <div className="container mx-auto max-w-4xl py-8 px-4 md:py-12">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-headline">Analyze YouTube Comment Sentiment</h2>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-headline">YouTube Yorum Duygu Analizi</h2>
             <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
-              Paste a YouTube video URL below to get an AI-powered sentiment analysis of the comments.
+              Yorumların yapay zeka destekli duygu analizini almak için aşağıya bir YouTube video URL'si yapıştırın.
             </p>
           </div>
 
           <Card className="mb-8 shadow-lg border-2 border-transparent focus-within:border-primary transition-colors duration-300">
             <CardHeader>
-              <CardTitle className="font-headline">Enter Video URL</CardTitle>
-              <CardDescription>Provide the link to the YouTube video you want to analyze.</CardDescription>
+              <CardTitle className="font-headline">Video URL'sini Girin</CardTitle>
+              <CardDescription>Analiz etmek istediğiniz YouTube videosunun bağlantısını sağlayın.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
@@ -86,7 +94,7 @@ export default function Home() {
                 </div>
                 <Button type="submit" disabled={isLoading} className="w-full sm:w-auto h-11 text-base">
                   <Sparkles className="mr-2 h-4 w-4" />
-                  {isLoading ? 'Analyzing...' : 'Analyze'}
+                  {isLoading ? 'Analiz ediliyor...' : 'Analiz Et'}
                 </Button>
               </form>
             </CardContent>

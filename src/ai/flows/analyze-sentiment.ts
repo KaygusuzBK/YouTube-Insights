@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview A YouTube comment sentiment analyzer.
+ * @fileOverview A YouTube comment sentiment analyzer using real comments.
  *
  * - analyzeSentiment - A function that handles the sentiment analysis of YouTube comments.
  * - AnalyzeSentimentInput - The input type for the analyzeSentiment function.
@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {getComments} from '@/services/youtube';
 
 const AnalyzeSentimentInputSchema = z.object({
   videoUrl: z.string().describe('The URL of the YouTube video to analyze.'),
@@ -32,35 +33,64 @@ const AnalyzeSentimentOutputSchema = z.object({
   negativeKeywords: z
     .array(z.string())
     .describe('A list of key negative keywords extracted from the comments.'),
-  comments: z.array(CommentSchema).describe('A list of generated example comments with their individual analysis.'),
+  comments: z.array(CommentSchema).describe('A list of analyzed comments from the video.'),
 });
 export type AnalyzeSentimentOutput = z.infer<typeof AnalyzeSentimentOutputSchema>;
 
 export async function analyzeSentiment(input: AnalyzeSentimentInput): Promise<AnalyzeSentimentOutput> {
-  return analyzeSentimentFlow(input);
+  const videoId = extractVideoId(input.videoUrl);
+  if (!videoId) {
+    throw new Error('Invalid YouTube URL');
+  }
+  return analyzeSentimentFlow({ videoId });
 }
+
+function extractVideoId(url: string): string | null {
+  const regex = /(?:v=)([^&?]+)/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
+
+const getCommentsTool = ai.defineTool(
+  {
+    name: 'getComments',
+    description: 'Fetches the top comments for a given YouTube video ID.',
+    inputSchema: z.object({
+      videoId: z.string().describe('The ID of the YouTube video.'),
+    }),
+    outputSchema: z.array(z.object({
+      author: z.string(),
+      text: z.string(),
+    })),
+  },
+  async ({videoId}) => {
+    return getComments(videoId);
+  }
+);
+
 
 const prompt = ai.definePrompt({
   name: 'analyzeSentimentPrompt',
-  input: {schema: AnalyzeSentimentInputSchema},
+  input: {schema: z.object({ videoId: z.string() })},
   output: {schema: AnalyzeSentimentOutputSchema},
-  prompt: `You are a YouTube comment analysis expert. Your task is to analyze a video based on its URL, infer its topic, and generate a realistic sentiment analysis as if you had access to its comments.
+  tools: [getCommentsTool],
+  prompt: `You are a YouTube comment analysis expert. Your task is to analyze the comments for the given video ID.
 
-Video URL: {{{videoUrl}}}
+Video ID: {{{videoId}}}
 
-Based on the likely topic of this video, please perform the following actions:
-1.  Determine the overall sentiment (Positive, Negative, or Neutral).
-2.  Extract a list of 3-5 key positive keywords.
-3.  Extract a list of 3-5 key negative keywords.
-4.  Generate 4 realistic, sample comments that reflect a mix of sentiments (positive, negative, neutral). For each comment, provide a fictional author, the comment text, and its individual sentiment.
-5.  Make sure the generated comments are in the same language as the likely language of the video's title and content.
-6.  Populate the output fields accordingly.`,
+Please perform the following actions:
+1. Use the getComments tool to fetch the comments for the video.
+2.  Analyze the fetched comments to determine the overall sentiment (Positive, Negative, or Neutral).
+3.  Extract a list of 3-5 key positive keywords from the comments.
+4.  Extract a list of 3-5 key negative keywords from the comments.
+5.  Select up to 4 of the most representative comments and analyze their individual sentiment.
+6.  Populate the output fields accordingly. If no comments are found, return empty arrays for keywords and comments, and a neutral overall sentiment.`,
 });
 
 const analyzeSentimentFlow = ai.defineFlow(
   {
     name: 'analyzeSentimentFlow',
-    inputSchema: AnalyzeSentimentInputSchema,
+    inputSchema: z.object({ videoId: z.string() }),
     outputSchema: AnalyzeSentimentOutputSchema,
   },
   async input => {
