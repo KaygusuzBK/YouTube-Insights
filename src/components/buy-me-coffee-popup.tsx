@@ -136,8 +136,8 @@ export function BuyMeCoffeePopup({ isOpen, onClose }: BuyMeCoffeePopupProps) {
               </Button>
               <Button
                 onClick={() => {
-                  // Burada gerçek QR kod linkini açabilirsiniz
-                  window.open('https://buymeacoffee.com', '_blank');
+                  // Gerçek Buy Me Coffee linkinizi açın
+                  window.open('https://buymeacoffee.com/KaygusuzBK', '_blank');
                 }}
                 className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-xl shadow-lg shadow-yellow-500/25"
               >

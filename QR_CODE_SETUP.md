@@ -56,12 +56,10 @@ Resminizin adı tam olarak `buy-me-a-coffee.png` olmalıdır.
 
 ### 8. Link Güncelleme
 
-Gerçek Buy Me Coffee linkinizi eklemek için:
-`src/components/buy-me-coffee-popup.tsx` dosyasında şu satırı güncelleyin:
+**✅ Güncel Buy Me Coffee Linki:**
+`https://buymeacoffee.com/KaygusuzBK`
 
-```tsx
-window.open('https://buymeacoffee.com', '_blank');  // ← Bu linki değiştirin
-```
+Bu link zaten `src/components/buy-me-coffee-popup.tsx` dosyasında ayarlanmıştır.
 
 ---
 
@@ -73,5 +71,6 @@ QR kodunuzu ekledikten sonra:
 - ✅ Gerçek QR kod görüntüleme
 - ✅ Responsive tasarım
 - ✅ Dark mode desteği
+- ✅ Gerçek Buy Me Coffee linki: https://buymeacoffee.com/KaygusuzBK
 
 Her şey hazır! 🚀 
