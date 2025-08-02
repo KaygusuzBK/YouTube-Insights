@@ -16,7 +16,7 @@ export async function getComments(videoId: string): Promise<Comment[]> {
     const response = await youtube.commentThreads.list({
       part: ['snippet'],
       videoId: videoId,
-      maxResults: 100, // Fetch top 100 comment threads
+      maxResults: 1000, // Fetch top 1000 comment threads
       order: 'relevance',
       key: apiKey,
     });
