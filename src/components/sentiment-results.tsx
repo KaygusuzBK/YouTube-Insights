@@ -47,6 +47,7 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
   const [sentimentFilter, setSentimentFilter] = useState<string>('all');
   const [keywordFilter, setKeywordFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showAllComments, setShowAllComments] = useState<boolean>(false);
 
   // Filtreleme mantığı - hooks'ları en üstte çağırıyoruz
   const filteredComments = useMemo(() => {
@@ -78,10 +79,17 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
     });
   }, [analysis, sentimentFilter, keywordFilter, searchQuery]);
 
+  // Görüntülenecek yorumları sınırla
+  const displayedComments = useMemo(() => {
+    if (showAllComments) return filteredComments;
+    return filteredComments.slice(0, 30);
+  }, [filteredComments, showAllComments]);
+
   const clearFilters = () => {
     setSentimentFilter('all');
     setKeywordFilter('');
     setSearchQuery('');
+    setShowAllComments(false);
   };
 
   const hasActiveFilters = sentimentFilter !== 'all' || keywordFilter || searchQuery;
@@ -285,56 +293,76 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
           <CardDescription className="text-base">
             {hasActiveFilters 
               ? `Filtrelenmiş yorumlar (${filteredComments.length}/${comments.length})`
-              : `Videonun tüm yorumlarının detaylı duygu analizi ve içerik değerlendirmesi. (${comments.length} yorum)`
+              : `Videonun tüm yorumlarının detaylı duygu analizi ve içerik değerlendirmesi. (${comments.length} yorum analiz edildi, ${displayedComments.length} yorum gösteriliyor)`
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
           {filteredComments.length > 0 ? (
-            <div className="h-[600px] border border-border/30 rounded-lg">
-              <Virtualizer
-                items={filteredComments}
-                itemContent={(index, comment) => (
-                  <div className="p-4 border-b border-border/30 last:border-b-0 hover:bg-card/30 transition-colors">
-                    <div className="flex gap-4">
-                      <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-md flex-shrink-0">
-                        <AvatarImage src={`https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000)}?w=48&h=48&fit=crop&crop=face`} />
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-semibold">
-                          {comment.author.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-semibold text-sm truncate">{comment.author}</p>
-                          <div className="flex items-center gap-2">
-                            {comment.sentiment === 'Positive' && (
-                              <Badge variant="secondary" className="bg-positive/10 text-positive border-positive/20 text-xs">
-                                <Smile className="h-3 w-3 mr-1" />
-                                Pozitif
-                              </Badge>
-                            )}
-                            {comment.sentiment === 'Negative' && (
-                              <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
-                                <Frown className="h-3 w-3 mr-1" />
-                                Negatif
-                              </Badge>
-                            )}
-                            {comment.sentiment === 'Neutral' && (
-                              <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs">
-                                <Meh className="h-3 w-3 mr-1" />
-                                Nötr
-                              </Badge>
-                            )}
+            <div className="space-y-4">
+              <div className="h-[600px] border border-border/30 rounded-lg">
+                <Virtualizer
+                  items={displayedComments}
+                  itemContent={(index, comment) => (
+                    <div className="p-4 border-b border-border/30 last:border-b-0 hover:bg-card/30 transition-colors">
+                      <div className="flex gap-4">
+                        <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-md flex-shrink-0">
+                          <AvatarImage src={`https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000)}?w=48&h=48&fit=crop&crop=face`} />
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-semibold">
+                            {comment.author.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-semibold text-sm truncate">{comment.author}</p>
+                            <div className="flex items-center gap-2">
+                              {comment.sentiment === 'Positive' && (
+                                <Badge variant="secondary" className="bg-positive/10 text-positive border-positive/20 text-xs">
+                                  <Smile className="h-3 w-3 mr-1" />
+                                  Pozitif
+                                </Badge>
+                              )}
+                              {comment.sentiment === 'Negative' && (
+                                <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
+                                  <Frown className="h-3 w-3 mr-1" />
+                                  Negatif
+                                </Badge>
+                              )}
+                              {comment.sentiment === 'Neutral' && (
+                                <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs">
+                                  <Meh className="h-3 w-3 mr-1" />
+                                  Nötr
+                                </Badge>
+                              )}
+                            </div>
                           </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{comment.text}</p>
                         </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{comment.text}</p>
                       </div>
                     </div>
-                  </div>
-                )}
-              />
-              <div className="p-4 text-center text-sm text-muted-foreground border-t border-border/30">
-                {filteredComments.length} yorum gösteriliyor
+                  )}
+                />
+              </div>
+              
+              {/* Devamını Gör Butonu */}
+              {!showAllComments && filteredComments.length > 30 && (
+                <div className="text-center">
+                  <Button
+                    onClick={() => setShowAllComments(true)}
+                    className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300 hover:scale-105 shadow-lg"
+                  >
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Devamını Gör ({filteredComments.length - 30} yorum daha)
+                  </Button>
+                </div>
+              )}
+              
+              {/* Yorum Sayısı Bilgisi */}
+              <div className="text-center text-sm text-muted-foreground">
+                {showAllComments 
+                  ? `${filteredComments.length} yorum gösteriliyor`
+                  : `${displayedComments.length} / ${filteredComments.length} yorum gösteriliyor`
+                }
               </div>
             </div>
           ) : (
