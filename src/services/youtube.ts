@@ -10,9 +10,9 @@ const CommentSchema = z.object({
 type Comment = z.infer<typeof CommentSchema>;
 
 export async function getComments(videoId: string): Promise<Comment[]> {
-  const apiKey = process.env.YOUTUBE_API_KEY;
+  const apiKey = 'AIzaSyB446sE3RuxjZb7iJHvz_QiY3ltVYB0ZQ8';
   if (!apiKey) {
-    throw new Error('YOUTUBE_API_KEY is not set in environment variables.');
+    throw new Error('YOUTUBE_API_KEY is not set.');
   }
 
   try {
