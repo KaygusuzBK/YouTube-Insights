@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Frown, Meh, Smile, ThumbsDown, ThumbsUp, TrendingUp, TrendingDown, Minus, Search, Filter, X } from "lucide-react";
 import { useState, useMemo } from "react";
-import { Virtuoso } from 'virtua';
+import { Virtualizer } from 'virtua';
 
 interface SentimentResultsProps {
   isLoading: boolean;
@@ -292,8 +292,8 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
         <CardContent>
           {filteredComments.length > 0 ? (
             <div className="h-[600px] border border-border/30 rounded-lg">
-              <Virtuoso
-                data={filteredComments}
+              <Virtualizer
+                items={filteredComments}
                 itemContent={(index, comment) => (
                   <div className="p-4 border-b border-border/30 last:border-b-0 hover:bg-card/30 transition-colors">
                     <div className="flex gap-4">
@@ -332,14 +332,10 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
                     </div>
                   </div>
                 )}
-                components={{
-                  Footer: () => (
-                    <div className="p-4 text-center text-sm text-muted-foreground border-t border-border/30">
-                      {filteredComments.length} yorum gösteriliyor
-                    </div>
-                  )
-                }}
               />
+              <div className="p-4 text-center text-sm text-muted-foreground border-t border-border/30">
+                {filteredComments.length} yorum gösteriliyor
+              </div>
             </div>
           ) : (
             <div className="text-center py-8">
