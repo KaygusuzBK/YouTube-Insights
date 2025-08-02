@@ -91,7 +91,13 @@ export default function Home() {
       }
     } catch (e) {
       console.error(e);
-      const errorMessage = e instanceof Error ? e.message : 'An error occurred during analysis. Please try again.';
+      let errorMessage = e instanceof Error ? e.message : 'An error occurred during analysis. Please try again.';
+      
+      // Handle specific AI overload error
+      if (errorMessage.includes('503') || errorMessage.includes('overloaded')) {
+        errorMessage = 'AI servisi şu anda yoğun. Lütfen birkaç dakika sonra tekrar deneyin.';
+      }
+      
       setError(errorMessage);
       toast({
         title: 'Analiz Başarısız',

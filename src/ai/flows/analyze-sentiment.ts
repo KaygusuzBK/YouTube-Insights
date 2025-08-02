@@ -165,16 +165,51 @@ const analyzeSentimentFlow = ai.defineFlow(
       return result;
     }
 
-    // Stage 2: AI Analysis (75%)
+    // Stage 2: AI Analysis with retry mechanism (75%)
     console.log('Stage 2: Analyzing comments with AI...');
-    const {output} = await prompt({ videoComments: JSON.stringify(videoComments) });
     
-    const result = output || { 
-      overallSentiment: 'Neutral', 
-      positiveKeywords: [], 
-      negativeKeywords: [], 
-      comments: [] 
-    };
+    let result;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        const {output} = await prompt({ videoComments: JSON.stringify(videoComments) });
+        result = output || { 
+          overallSentiment: 'Neutral', 
+          positiveKeywords: [], 
+          negativeKeywords: [], 
+          comments: [] 
+        };
+        break; // Success, exit retry loop
+      } catch (error: any) {
+        retryCount++;
+        console.log(`AI Analysis attempt ${retryCount} failed:`, error.message);
+        
+        if (error.message?.includes('503') || error.message?.includes('overloaded')) {
+          if (retryCount < maxRetries) {
+            console.log(`Retrying in ${retryCount * 2} seconds...`);
+            await new Promise(resolve => setTimeout(resolve, retryCount * 2000)); // Exponential backoff
+            continue;
+          } else {
+            console.log('Max retries reached, returning neutral result');
+            result = { 
+              overallSentiment: 'Neutral', 
+              positiveKeywords: [], 
+              negativeKeywords: [], 
+              comments: videoComments.map(c => ({
+                author: c.author,
+                text: c.text,
+                sentiment: 'Neutral' as const
+              }))
+            };
+          }
+        } else {
+          // Non-retryable error, throw it
+          throw error;
+        }
+      }
+    }
 
     // Stage 3: Caching result (100%)
     console.log('Stage 3: Caching result...');
