@@ -1,15 +1,6 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Film, Moon, Sun, Settings, User, LogOut, Sparkles, Brain, Zap } from "lucide-react";
+import { Film, Moon, Sun, Sparkles, Brain, Zap } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
@@ -70,85 +61,6 @@ export function Header() {
               <Moon className="h-5 w-5 text-blue-500" />
             )}
           </Button>
-          
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="relative h-12 w-12 rounded-2xl hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10 transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 border-transparent hover:border-primary/20"
-              >
-                <Avatar className="h-10 w-10 border-2 border-primary/30 shadow-lg">
-                  <AvatarImage 
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face" 
-                    alt="User Avatar" 
-                  />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold">
-                    TU
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background animate-pulse"></div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              className="w-64 glass-effect border-border/40 shadow-2xl" 
-              align="end" 
-              forceMount
-              sideOffset={8}
-            >
-              <DropdownMenuLabel className="font-normal p-4">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 border-2 border-primary/30">
-                    <AvatarImage 
-                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face" 
-                      alt="User Avatar" 
-                    />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold">
-                      TU
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-semibold leading-none">Test User</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      test@example.com
-                    </p>
-                    <Badge variant="secondary" className="w-fit text-xs mt-1 bg-positive/10 text-positive border-positive/20">
-                      Premium
-                    </Badge>
-                  </div>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="flex items-center gap-3 cursor-pointer hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10 transition-colors p-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <User className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">Profile</p>
-                  <p className="text-xs text-muted-foreground">Hesap bilgileriniz</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-3 cursor-pointer hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10 transition-colors p-3">
-                <div className="p-2 bg-accent/10 rounded-lg">
-                  <Settings className="h-4 w-4 text-accent" />
-                </div>
-                <div>
-                  <p className="font-medium">Settings</p>
-                  <p className="text-xs text-muted-foreground">Uygulama ayarları</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="flex items-center gap-3 cursor-pointer hover:bg-gradient-to-r hover:from-destructive/10 hover:to-red-500/10 transition-colors p-3 text-destructive">
-                <div className="p-2 bg-destructive/10 rounded-lg">
-                  <LogOut className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="font-medium">Log out</p>
-                  <p className="text-xs text-muted-foreground">Hesaptan çıkış yap</p>
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
     </header>
