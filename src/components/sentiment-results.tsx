@@ -2,9 +2,13 @@ import { type AnalyzeSentimentOutput } from "@/ai/flows/analyze-sentiment";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Frown, Meh, Smile, ThumbsDown, ThumbsUp, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { AlertCircle, Frown, Meh, Smile, ThumbsDown, ThumbsUp, TrendingUp, TrendingDown, Minus, Search, Filter, X } from "lucide-react";
+import { useState, useMemo } from "react";
 
 interface SentimentResultsProps {
   isLoading: boolean;
@@ -39,6 +43,10 @@ const SentimentTrendIcon = ({ sentiment }: { sentiment: string }) => {
 };
 
 export function SentimentResults({ isLoading, analysis, error }: SentimentResultsProps) {
+  const [sentimentFilter, setSentimentFilter] = useState<string>('all');
+  const [keywordFilter, setKeywordFilter] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
   if (isLoading) {
     return <LoadingSkeleton />;
   }
@@ -58,6 +66,42 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
   }
   
   const { overallSentiment, positiveKeywords, negativeKeywords, comments } = analysis;
+
+  // Filtreleme mantığı
+  const filteredComments = useMemo(() => {
+    return comments.filter(comment => {
+      // Sentiment filtresi
+      if (sentimentFilter !== 'all' && comment.sentiment.toLowerCase() !== sentimentFilter.toLowerCase()) {
+        return false;
+      }
+      
+      // Keyword filtresi
+      if (keywordFilter) {
+        const hasKeyword = comment.text.toLowerCase().includes(keywordFilter.toLowerCase()) ||
+                          positiveKeywords.some(kw => comment.text.toLowerCase().includes(kw.toLowerCase())) ||
+                          negativeKeywords.some(kw => comment.text.toLowerCase().includes(kw.toLowerCase()));
+        if (!hasKeyword) return false;
+      }
+      
+      // Arama filtresi
+      if (searchQuery) {
+        const searchLower = searchQuery.toLowerCase();
+        const matchesSearch = comment.text.toLowerCase().includes(searchLower) ||
+                             comment.author.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+      
+      return true;
+    });
+  }, [comments, sentimentFilter, keywordFilter, searchQuery, positiveKeywords, negativeKeywords]);
+
+  const clearFilters = () => {
+    setSentimentFilter('all');
+    setKeywordFilter('');
+    setSearchQuery('');
+  };
+
+  const hasActiveFilters = sentimentFilter !== 'all' || keywordFilter || searchQuery;
 
   return (
     <div className="space-y-8 animate-in fade-in-0 duration-700">
@@ -99,8 +143,9 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
                 <Badge 
                   key={keyword} 
                   variant="secondary" 
-                  className="bg-positive/10 text-positive border-positive/20 hover:bg-positive/20 transition-colors animate-in fade-in-0 duration-300"
+                  className="bg-positive/10 text-positive border-positive/20 hover:bg-positive/20 transition-colors animate-in fade-in-0 duration-300 cursor-pointer"
                   style={{ animationDelay: `${index * 100}ms` }}
+                  onClick={() => setKeywordFilter(keyword)}
                 >
                   {keyword}
                 </Badge>
@@ -124,8 +169,9 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
                 <Badge 
                   key={keyword} 
                   variant="secondary" 
-                  className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20 transition-colors animate-in fade-in-0 duration-300"
+                  className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20 transition-colors animate-in fade-in-0 duration-300 cursor-pointer"
                   style={{ animationDelay: `${index * 100}ms` }}
+                  onClick={() => setKeywordFilter(keyword)}
                 >
                   {keyword}
                 </Badge>
@@ -137,16 +183,111 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
         </Card>
       </div>
 
+      {/* Filtering Section */}
+      <Card className="card-hover glass-effect border-border/50 shadow-lg">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg font-headline">Filtreleme Seçenekleri</CardTitle>
+            </div>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Filtreleri Temizle
+              </Button>
+            )}
+          </div>
+          <CardDescription>
+            Yorumları duygu durumu, anahtar kelimeler ve arama terimlerine göre filtreleyin
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Sentiment Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Duygu Durumu</label>
+              <Select value={sentimentFilter} onValueChange={setSentimentFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tüm duygular" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tüm Duygular</SelectItem>
+                  <SelectItem value="positive">Pozitif</SelectItem>
+                  <SelectItem value="negative">Negatif</SelectItem>
+                  <SelectItem value="neutral">Nötr</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Keyword Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Anahtar Kelime</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Anahtar kelime ara..."
+                  value={keywordFilter}
+                  onChange={(e) => setKeywordFilter(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {/* Search Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Genel Arama</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Yorum veya yazar ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Results Summary */}
+          <div className="flex items-center justify-between pt-4 border-t border-border/50">
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">
+                Toplam: <span className="font-semibold text-foreground">{comments.length}</span> yorum
+              </span>
+              {hasActiveFilters && (
+                <span className="text-sm text-muted-foreground">
+                  Filtrelenmiş: <span className="font-semibold text-foreground">{filteredComments.length}</span> yorum
+                </span>
+              )}
+            </div>
+            {hasActiveFilters && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                {Math.round((filteredComments.length / comments.length) * 100)}% eşleşme
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Comments Analysis */}
       <Card className="card-hover glass-effect border-border/50 shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl font-headline text-gradient">Yorum Analizi Dökümü</CardTitle>
           <CardDescription className="text-base">
-            Videonun yorumlarından bazılarının detaylı duygu analizi ve içerik değerlendirmesi.
+            {hasActiveFilters 
+              ? `Filtrelenmiş yorumlar (${filteredComments.length}/${comments.length})`
+              : `Videonun tüm yorumlarının detaylı duygu analizi ve içerik değerlendirmesi. (${comments.length} yorum)`
+            }
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {comments.length > 0 ? comments.map((comment, index) => (
+          {filteredComments.length > 0 ? filteredComments.map((comment, index) => (
             <div 
               key={index} 
               className="flex gap-4 p-4 rounded-lg bg-card/30 backdrop-blur-sm border border-border/30 hover:bg-card/50 transition-all duration-300 animate-in fade-in-0 duration-500"
@@ -188,9 +329,14 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
           )) : (
             <div className="text-center py-8">
               <div className="p-4 bg-muted/50 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                <Search className="h-8 w-8 text-muted-foreground" />
               </div>
-              <p className="text-muted-foreground">Bu video için analiz edilecek yorum bulunamadı.</p>
+              <p className="text-muted-foreground">
+                {hasActiveFilters 
+                  ? 'Seçilen filtrelere uygun yorum bulunamadı. Filtreleri değiştirmeyi deneyin.'
+                  : 'Bu video için analiz edilecek yorum bulunamadı.'
+                }
+              </p>
             </div>
           )}
         </CardContent>
@@ -244,6 +390,40 @@ const LoadingSkeleton = () => (
         </CardContent>
       </Card>
     </div>
+
+    {/* Filtering Skeleton */}
+    <Card className="glass-effect border-border/50">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5" />
+            <Skeleton className="h-6 w-40" />
+          </div>
+        </div>
+        <Skeleton className="h-4 w-80" />
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+        <div className="flex items-center justify-between pt-4 border-t border-border/50">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
 
     {/* Comments Skeleton */}
     <Card className="glass-effect border-border/50">
