@@ -53,7 +53,7 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
   const filteredComments = useMemo(() => {
     if (!analysis?.comments) return [];
     
-    return analysis.comments.filter(comment => {
+    const filtered = analysis.comments.filter(comment => {
       // Sentiment filtresi
       if (sentimentFilter !== 'all' && comment.sentiment.toLowerCase() !== sentimentFilter.toLowerCase()) {
         return false;
@@ -77,12 +77,17 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
       
       return true;
     });
+    
+    console.log('Filtered comments:', filtered.length);
+    return filtered;
   }, [analysis, sentimentFilter, keywordFilter, searchQuery]);
 
   // Görüntülenecek yorumları sınırla
   const displayedComments = useMemo(() => {
     if (showAllComments) return filteredComments;
-    return filteredComments.slice(0, 30);
+    const limited = filteredComments.slice(0, 30);
+    console.log('Displayed comments:', limited.length);
+    return limited;
   }, [filteredComments, showAllComments]);
 
   const clearFilters = () => {
@@ -298,6 +303,7 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {console.log('Rendering comments section, filteredComments:', filteredComments.length, 'displayedComments:', displayedComments.length)}
           {filteredComments.length > 0 ? (
             <div className="space-y-4">
               <div className="h-[600px] border border-border/30 rounded-lg">
