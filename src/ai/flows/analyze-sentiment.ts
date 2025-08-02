@@ -102,7 +102,7 @@ Please perform the following actions:
 1. Analyze the fetched comments to determine the overall sentiment (Positive, Negative, or Neutral).
 2. Extract a list of 3-5 key positive keywords from the comments.
 3. Extract a list of 3-5 key negative keywords from the comments.
-4. Select up to 20 of the most representative comments and analyze their individual sentiment.
+4. Select up to 100 of the most representative comments and analyze their individual sentiment.
 5. Populate the output fields accordingly. If no comments are found, return empty arrays for keywords and comments, and a neutral overall sentiment.`,
 });
 

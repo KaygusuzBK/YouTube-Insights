@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Frown, Meh, Smile, ThumbsDown, ThumbsUp, TrendingUp, TrendingDown, Minus, Search, Filter, X } from "lucide-react";
 import { useState, useMemo } from "react";
+import { Virtuoso } from 'virtua';
 
 interface SentimentResultsProps {
   isLoading: boolean;
@@ -288,47 +289,59 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
             }
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {filteredComments.length > 0 ? filteredComments.map((comment, index) => (
-            <div 
-              key={index} 
-              className="flex gap-4 p-4 rounded-lg bg-card/30 backdrop-blur-sm border border-border/30 hover:bg-card/50 transition-all duration-300 animate-in fade-in-0 duration-500"
-              style={{ animationDelay: `${index * 150}ms` }}
-            >
-              <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-md">
-                <AvatarImage src={`https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000)}?w=48&h=48&fit=crop&crop=face`} />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-semibold">
-                  {comment.author.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold text-sm truncate">{comment.author}</p>
-                  <div className="flex items-center gap-2">
-                    {comment.sentiment === 'Positive' && (
-                      <Badge variant="secondary" className="bg-positive/10 text-positive border-positive/20 text-xs">
-                        <Smile className="h-3 w-3 mr-1" />
-                        Pozitif
-                      </Badge>
-                    )}
-                    {comment.sentiment === 'Negative' && (
-                      <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
-                        <Frown className="h-3 w-3 mr-1" />
-                        Negatif
-                      </Badge>
-                    )}
-                    {comment.sentiment === 'Neutral' && (
-                      <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs">
-                        <Meh className="h-3 w-3 mr-1" />
-                        Nötr
-                      </Badge>
-                    )}
+        <CardContent>
+          {filteredComments.length > 0 ? (
+            <div className="h-[600px] border border-border/30 rounded-lg">
+              <Virtuoso
+                data={filteredComments}
+                itemContent={(index, comment) => (
+                  <div className="p-4 border-b border-border/30 last:border-b-0 hover:bg-card/30 transition-colors">
+                    <div className="flex gap-4">
+                      <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-md flex-shrink-0">
+                        <AvatarImage src={`https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000)}?w=48&h=48&fit=crop&crop=face`} />
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-semibold">
+                          {comment.author.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-semibold text-sm truncate">{comment.author}</p>
+                          <div className="flex items-center gap-2">
+                            {comment.sentiment === 'Positive' && (
+                              <Badge variant="secondary" className="bg-positive/10 text-positive border-positive/20 text-xs">
+                                <Smile className="h-3 w-3 mr-1" />
+                                Pozitif
+                              </Badge>
+                            )}
+                            {comment.sentiment === 'Negative' && (
+                              <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
+                                <Frown className="h-3 w-3 mr-1" />
+                                Negatif
+                              </Badge>
+                            )}
+                            {comment.sentiment === 'Neutral' && (
+                              <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs">
+                                <Meh className="h-3 w-3 mr-1" />
+                                Nötr
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{comment.text}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">{comment.text}</p>
-              </div>
+                )}
+                components={{
+                  Footer: () => (
+                    <div className="p-4 text-center text-sm text-muted-foreground border-t border-border/30">
+                      {filteredComments.length} yorum gösteriliyor
+                    </div>
+                  )
+                }}
+              />
             </div>
-          )) : (
+          ) : (
             <div className="text-center py-8">
               <div className="p-4 bg-muted/50 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Search className="h-8 w-8 text-muted-foreground" />
