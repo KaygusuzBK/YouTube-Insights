@@ -17,7 +17,6 @@ const apiKey = 'AIzaSyB446sE3RuxjZb7iJHvz_QiY3ltVYB0ZQ8';
 
 const ai = genkit({
   plugins: [googleAI({apiKey})],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 
