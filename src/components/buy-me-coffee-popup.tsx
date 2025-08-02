@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, Coffee, Heart, Sparkles } from 'lucide-react';
+import Image from 'next/image';
 
 interface BuyMeCoffeePopupProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface BuyMeCoffeePopupProps {
 
 export function BuyMeCoffeePopup({ isOpen, onClose }: BuyMeCoffeePopupProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -66,33 +68,46 @@ export function BuyMeCoffeePopup({ isOpen, onClose }: BuyMeCoffeePopupProps) {
             <div className="flex justify-center">
               <div className="p-4 bg-white rounded-2xl shadow-lg border-2 border-yellow-200 dark:border-yellow-700">
                 <div className="w-48 h-48 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl flex items-center justify-center border border-yellow-200 dark:border-yellow-700">
-                  <div className="text-center">
-                    <div className="w-32 h-32 bg-yellow-400 rounded-lg flex items-center justify-center mb-3 shadow-md">
-                      <div className="w-24 h-24 bg-white rounded-md flex items-center justify-center">
-                        <div className="w-16 h-16 bg-black rounded-sm relative">
-                          {/* QR Code Pattern Simulation */}
-                          <div className="absolute inset-0 grid grid-cols-8 grid-rows-8 gap-0.5 p-1">
-                            {/* Finder Patterns */}
-                            <div className="col-span-3 row-span-3 bg-black rounded-sm"></div>
-                            <div className="col-span-3 row-span-3 bg-black rounded-sm col-start-6"></div>
-                            <div className="col-span-3 row-span-3 bg-black rounded-sm row-start-6"></div>
-                            
-                            {/* Random QR dots */}
-                            <div className="col-start-4 row-start-1 bg-black rounded-sm w-1 h-1"></div>
-                            <div className="col-start-6 row-start-2 bg-black rounded-sm w-1 h-1"></div>
-                            <div className="col-start-2 row-start-4 bg-black rounded-sm w-1 h-1"></div>
-                            <div className="col-start-5 row-start-5 bg-black rounded-sm w-1 h-1"></div>
-                            <div className="col-start-7 row-start-6 bg-black rounded-sm w-1 h-1"></div>
-                            <div className="col-start-3 row-start-7 bg-black rounded-sm w-1 h-1"></div>
-                            <div className="col-start-8 row-start-8 bg-black rounded-sm w-1 h-1"></div>
+                  {!imageError ? (
+                    <div className="relative w-full h-full">
+                      <Image
+                        src="/buy-me-a-coffee.png"
+                        alt="Buy Me a Coffee QR Code"
+                        fill
+                        className="object-contain rounded-lg"
+                        onError={() => setImageError(true)}
+                        priority
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="w-32 h-32 bg-yellow-400 rounded-lg flex items-center justify-center mb-3 shadow-md">
+                        <div className="w-24 h-24 bg-white rounded-md flex items-center justify-center">
+                          <div className="w-16 h-16 bg-black rounded-sm relative">
+                            {/* QR Code Pattern Simulation */}
+                            <div className="absolute inset-0 grid grid-cols-8 grid-rows-8 gap-0.5 p-1">
+                              {/* Finder Patterns */}
+                              <div className="col-span-3 row-span-3 bg-black rounded-sm"></div>
+                              <div className="col-span-3 row-span-3 bg-black rounded-sm col-start-6"></div>
+                              <div className="col-span-3 row-span-3 bg-black rounded-sm row-start-6"></div>
+                              
+                              {/* Random QR dots */}
+                              <div className="col-start-4 row-start-1 bg-black rounded-sm w-1 h-1"></div>
+                              <div className="col-start-6 row-start-2 bg-black rounded-sm w-1 h-1"></div>
+                              <div className="col-start-2 row-start-4 bg-black rounded-sm w-1 h-1"></div>
+                              <div className="col-start-5 row-start-5 bg-black rounded-sm w-1 h-1"></div>
+                              <div className="col-start-7 row-start-6 bg-black rounded-sm w-1 h-1"></div>
+                              <div className="col-start-3 row-start-7 bg-black rounded-sm w-1 h-1"></div>
+                              <div className="col-start-8 row-start-8 bg-black rounded-sm w-1 h-1"></div>
+                            </div>
                           </div>
                         </div>
                       </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                        QR Kodu Tarayın
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                      QR Kodu Tarayın
-                    </p>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
