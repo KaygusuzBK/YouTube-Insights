@@ -120,54 +120,24 @@ export default function Home() {
 
   const handleChannelSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setChannelAnalysis(null);
-    setProgress(0);
-    setProgressMessage('');
-    
-    // Basic URL validation for YouTube channels
-    const youtubeChannelRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(channel\/|c\/|user\/|@)[^\/\s]+|youtu\.be\/[^\/\s]+)/;
-    if (!youtubeChannelRegex.test(url)) {
-      setError('Please enter a valid YouTube channel URL.');
-      toast({
-        title: 'Invalid URL',
-        description: 'Lütfen geçerli bir YouTube kanal URL\'si girin. (Örnek: youtube.com/@channelname)',
-        variant: 'destructive'
-      })
-      return;
-    }
+    if (!url.trim()) return;
 
     setIsLoading(true);
+    setProgress(0);
+    setProgressMessage('Kanal bilgileri alınıyor...');
 
     try {
-      // Progress simulation
-      setProgressMessage('Kanal bilgileri alınıyor...');
-      setProgress(15);
-      
-      // Small delay to show progress
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setProgressMessage('Kanal videoları taranıyor...');
-      setProgress(30);
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setProgressMessage('Video yorumları toplanıyor...');
-      setProgress(50);
-      
-      const result = await analyzeChannelSentiment({ channelUrl: url });
-      
-      setProgressMessage('AI ile analiz yapılıyor...');
-      setProgress(75);
-      
-      // Small delay to show final progress
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setProgressMessage('Analiz tamamlandı!');
-      setProgress(100);
-      
+      const result = await analyzeChannelSentiment(
+        { channelUrl: url }, 
+        (progress, message) => {
+          setProgress(progress);
+          setProgressMessage(message);
+        }
+      );
+
       setChannelAnalysis(result);
-      
+      setActiveTab('channel');
+
       if(result.totalComments === 0){
         toast({
           title: 'Yorum Bulunamadı',
@@ -181,28 +151,18 @@ export default function Home() {
           variant: 'default'
         })
       }
-    } catch (e) {
-      console.error(e);
-      let errorMessage = e instanceof Error ? e.message : 'An error occurred during analysis. Please try again.';
-      
-      // Handle specific AI overload error
-      if (errorMessage.includes('503') || errorMessage.includes('overloaded')) {
-        errorMessage = 'AI servisi şu anda yoğun. Lütfen birkaç dakika sonra tekrar deneyin.';
-      }
-      
-      setError(errorMessage);
+
+    } catch (error) {
+      console.error('Channel analysis error:', error);
       toast({
-        title: 'Analiz Başarısız',
-        description: errorMessage,
+        title: 'Analiz Hatası',
+        description: error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu.',
         variant: 'destructive'
-      })
+      });
     } finally {
       setIsLoading(false);
-      // Reset progress after a delay
-      setTimeout(() => {
-        setProgress(0);
-        setProgressMessage('');
-      }, 2000);
+      setProgress(0);
+      setProgressMessage('');
     }
   };
 

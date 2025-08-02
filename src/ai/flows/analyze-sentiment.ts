@@ -134,21 +134,296 @@ export async function analyzeSentiment(
 
 // Channel Analysis Function
 export async function analyzeChannelSentiment(
-  input: AnalyzeChannelSentimentInput
+  input: AnalyzeChannelSentimentInput, 
+  onProgress?: (progress: number, message: string) => void
 ): Promise<AnalyzeChannelSentimentOutput> {
-  const channelId = extractChannelId(input.channelUrl);
+  const { channelUrl } = input;
+  const channelId = extractChannelId(channelUrl);
+  
   if (!channelId) {
-    throw new Error('Invalid YouTube channel URL');
+    throw new Error('Invalid channel URL');
   }
 
   // Check cache first
-  const cachedResult = getCachedResult(`channel_${channelId}`);
-  if (cachedResult) {
-    console.log('Returning cached result for channel:', channelId);
-    return cachedResult;
+  const cached = getCachedResult(`channel_${channelId}`);
+  if (cached) {
+    console.log('Returning cached channel analysis result');
+    return cached;
   }
 
-  return analyzeChannelSentimentFlow({channelId});
+  console.log('Starting channel analysis for:', channelId);
+
+  // Stage 1: Fetch channel data (25%)
+  console.log('Stage 1: Fetching channel data...');
+  onProgress?.(25, 'Kanal bilgileri alınıyor...');
+  const channelData = await getChannelComments(channelId);
+  
+  if (!channelData || !channelData.channel) {
+    throw new Error('Channel not found');
+  }
+
+  if (channelData.videos.length === 0) {
+    const result: AnalyzeChannelSentimentOutput = {
+      channelId: channelData.channel.id,
+      channelTitle: channelData.channel.title,
+      subscriberCount: channelData.channel.subscriberCount,
+      videoCount: channelData.channel.videoCount,
+      overallSentiment: 'Neutral',
+      positiveKeywords: [],
+      negativeKeywords: [],
+      videos: [],
+      totalComments: 0,
+      totalVideos: 0,
+    };
+    setCachedResult(`channel_${channelId}`, result);
+    return result;
+  }
+
+  // Check if any videos have comments
+  const videosWithComments = channelData.videos.filter(v => v.comments.length > 0);
+  if (videosWithComments.length === 0) {
+    const result: AnalyzeChannelSentimentOutput = {
+      channelId: channelData.channel.id,
+      channelTitle: channelData.channel.title,
+      subscriberCount: channelData.channel.subscriberCount,
+      videoCount: channelData.channel.videoCount,
+      overallSentiment: 'Neutral',
+      positiveKeywords: [],
+      negativeKeywords: [],
+      videos: channelData.videos.map(v => ({
+        videoId: v.video.id || `video_${Math.random().toString(36).substr(2, 9)}`,
+        videoTitle: v.video.title,
+        publishedAt: v.video.publishedAt,
+        viewCount: v.video.viewCount,
+        commentCount: v.video.commentCount,
+        overallSentiment: 'Neutral' as const,
+        positiveKeywords: [],
+        negativeKeywords: [],
+        comments: []
+      })),
+      totalComments: 0,
+      totalVideos: channelData.videos.length,
+    };
+    setCachedResult(`channel_${channelId}`, result);
+    return result;
+  }
+
+  // Stage 2: Analyze each video individually
+  console.log('Stage 2: Analyzing videos individually...');
+  onProgress?.(50, 'Videolar tek tek analiz ediliyor...');
+  
+  const analyzedVideos: VideoAnalysis[] = [];
+  let totalComments = 0;
+  let allPositiveKeywords: string[] = [];
+  let allNegativeKeywords: string[] = [];
+  let sentimentScores = { positive: 0, negative: 0, neutral: 0 };
+
+  for (let i = 0; i < videosWithComments.length; i++) {
+    const video = videosWithComments[i];
+    const progressPercent = 50 + ((i + 1) / videosWithComments.length) * 45; // 50% to 95%
+    
+    console.log(`Analyzing video ${i + 1}/${videosWithComments.length}: ${video.video.title}`);
+    onProgress?.(progressPercent, `Video ${i + 1}/${videosWithComments.length} analiz ediliyor: ${video.video.title.substring(0, 30)}...`);
+    
+    if (video.comments.length === 0) {
+      // Video has no comments, add empty analysis
+      analyzedVideos.push({
+        videoId: video.video.id || `video_${Math.random().toString(36).substr(2, 9)}`,
+        videoTitle: video.video.title,
+        publishedAt: video.video.publishedAt,
+        viewCount: video.video.viewCount,
+        commentCount: video.video.commentCount,
+        overallSentiment: 'Neutral' as const,
+        positiveKeywords: [],
+        negativeKeywords: [],
+        comments: []
+      });
+      continue;
+    }
+
+    // Analyze individual video
+    const videoAnalysis = await analyzeVideoComments(video);
+    analyzedVideos.push(videoAnalysis);
+    
+    // Update totals
+    totalComments += video.comments.length;
+    allPositiveKeywords.push(...videoAnalysis.positiveKeywords);
+    allNegativeKeywords.push(...videoAnalysis.negativeKeywords);
+    
+    // Update sentiment scores
+    switch (videoAnalysis.overallSentiment) {
+      case 'Positive':
+        sentimentScores.positive++;
+        break;
+      case 'Negative':
+        sentimentScores.negative++;
+        break;
+      case 'Neutral':
+        sentimentScores.neutral++;
+        break;
+    }
+  }
+
+  // Final stage: Calculate overall results
+  onProgress?.(95, 'Genel sonuçlar hesaplanıyor...');
+
+  // Calculate overall channel sentiment
+  const totalVideos = sentimentScores.positive + sentimentScores.negative + sentimentScores.neutral;
+  let overallSentiment: 'Positive' | 'Negative' | 'Neutral' = 'Neutral';
+  
+  if (totalVideos > 0) {
+    const positiveRatio = sentimentScores.positive / totalVideos;
+    const negativeRatio = sentimentScores.negative / totalVideos;
+    
+    if (positiveRatio > 0.5) {
+      overallSentiment = 'Positive';
+    } else if (negativeRatio > 0.5) {
+      overallSentiment = 'Negative';
+    }
+  }
+
+  // Get most common keywords
+  const positiveKeywordCounts = allPositiveKeywords.reduce((acc, keyword) => {
+    acc[keyword] = (acc[keyword] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const negativeKeywordCounts = allNegativeKeywords.reduce((acc, keyword) => {
+    acc[keyword] = (acc[keyword] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const topPositiveKeywords = Object.entries(positiveKeywordCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 10)
+    .map(([keyword]) => keyword);
+
+  const topNegativeKeywords = Object.entries(negativeKeywordCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 10)
+    .map(([keyword]) => keyword);
+
+  const result: AnalyzeChannelSentimentOutput = {
+    channelId: channelData.channel.id,
+    channelTitle: channelData.channel.title,
+    subscriberCount: channelData.channel.subscriberCount,
+    videoCount: channelData.channel.videoCount,
+    overallSentiment,
+    positiveKeywords: topPositiveKeywords,
+    negativeKeywords: topNegativeKeywords,
+    videos: analyzedVideos,
+    totalComments,
+    totalVideos: analyzedVideos.length,
+  };
+
+  setCachedResult(`channel_${channelId}`, result);
+  onProgress?.(100, 'Analiz tamamlandı!');
+  return result;
+}
+
+// Helper function to analyze comments for a single video
+async function analyzeVideoComments(video: any): Promise<VideoAnalysis> {
+  const videoId = video.video.id || `video_${Math.random().toString(36).substr(2, 9)}`;
+  
+  // Create a simple prompt for individual video analysis
+  const videoPrompt = `
+Analyze the sentiment of comments for this YouTube video:
+
+Video Title: ${video.video.title}
+Video ID: ${videoId}
+Number of Comments: ${video.comments.length}
+
+Comments:
+${video.comments.map((c: any, index: number) => `${index + 1}. ${c.author}: ${c.text}`).join('\n')}
+
+Please analyze the sentiment of these comments and return a JSON object with the following structure:
+
+{
+  "videoId": "${videoId}",
+  "videoTitle": "${video.video.title}",
+  "publishedAt": "${video.video.publishedAt}",
+  "viewCount": "${video.video.viewCount}",
+  "commentCount": "${video.video.commentCount}",
+  "overallSentiment": "Positive|Negative|Neutral",
+  "positiveKeywords": ["keyword1", "keyword2", "keyword3"],
+  "negativeKeywords": ["keyword1", "keyword2", "keyword3"],
+  "comments": [
+    {
+      "author": "comment author",
+      "text": "comment text",
+      "sentiment": "Positive|Negative|Neutral"
+    }
+  ]
+}
+
+CRITICAL RULES:
+1. The videoId must be exactly "${videoId}"
+2. Comments should ONLY have "author", "text", and "sentiment" fields
+3. Do NOT put videoId inside individual comments
+4. Analyze each comment's sentiment carefully
+5. Extract meaningful keywords from the comments
+6. Determine overall sentiment based on the majority of comments
+`;
+
+  let result: VideoAnalysis;
+  
+  try {
+    const output = await prompt(videoPrompt, {
+      model: 'gemini-1.5-flash',
+      temperature: 0.3,
+      maxOutputTokens: 4000,
+    });
+
+    if (output && output.videoId && output.comments) {
+      // Validate and clean the output
+      const cleanedComments = output.comments.map((comment: any) => {
+        const { videoId, ...cleanComment } = comment;
+        return {
+          author: cleanComment.author || 'Unknown',
+          text: cleanComment.text || '',
+          sentiment: cleanComment.sentiment || 'Neutral'
+        };
+      });
+
+      result = {
+        videoId: output.videoId,
+        videoTitle: output.videoTitle || video.video.title,
+        publishedAt: output.publishedAt || video.video.publishedAt,
+        viewCount: output.viewCount || video.video.viewCount,
+        commentCount: output.commentCount || video.video.commentCount,
+        overallSentiment: output.overallSentiment || 'Neutral',
+        positiveKeywords: output.positiveKeywords || [],
+        negativeKeywords: output.negativeKeywords || [],
+        comments: cleanedComments
+      };
+    } else {
+      throw new Error('Invalid AI response structure');
+    }
+  } catch (error) {
+    console.error('Error analyzing video comments:', error);
+    
+    // Fallback: create neutral analysis
+    result = {
+      videoId,
+      videoTitle: video.video.title,
+      publishedAt: video.video.publishedAt,
+      viewCount: video.video.viewCount,
+      commentCount: video.video.commentCount,
+      overallSentiment: 'Neutral',
+      positiveKeywords: [],
+      negativeKeywords: [],
+      comments: video.comments.map((c: any) => {
+        const { videoId, ...cleanComment } = c;
+        return {
+          author: cleanComment.author || c.author,
+          text: cleanComment.text || c.text,
+          sentiment: 'Neutral' as const
+        };
+      })
+    };
+  }
+
+  return result;
 }
 
 // Helper function to extract video ID
