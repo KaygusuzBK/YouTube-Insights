@@ -48,7 +48,7 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="md:col-span-1 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Genel Duygu</CardTitle>
+            <CardTitle>Genel Duygu</CardTitle>
             <SentimentIcon sentiment={overallSentiment} />
           </CardHeader>
           <CardContent>
@@ -58,7 +58,7 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
         </Card>
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Pozitif Anahtar Kelimeler</CardTitle>
+            <CardTitle>Pozitif Anahtar Kelimeler</CardTitle>
             <ThumbsUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -71,7 +71,7 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
         </Card>
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Negatif Anahtar Kelimeler</CardTitle>
+            <CardTitle>Negatif Anahtar Kelimeler</CardTitle>
             <ThumbsDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -86,7 +86,7 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
 
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className="font-headline">Yorum Analizi Dökümü</CardTitle>
+          <CardTitle>Yorum Analizi Dökümü</CardTitle>
           <CardDescription>Videonun yorumlarından bazılarının duygu analizi.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
