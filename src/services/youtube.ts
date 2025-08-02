@@ -231,7 +231,13 @@ export async function getComments(videoId: string): Promise<Comment[]> {
       };
     }).filter(c => c.text); // Filter out empty comments
 
-  } catch (error) {
+  } catch (error: any) {
+    // Check if comments are disabled
+    if (error.message?.includes('disabled comments') || error.message?.includes('403')) {
+      console.log(`Comments are disabled for video: ${videoId}`);
+      return [];
+    }
+    
     console.error('Error fetching YouTube comments:', error);
     return [];
   }

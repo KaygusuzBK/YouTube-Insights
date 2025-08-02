@@ -171,7 +171,7 @@ export default function Home() {
       if(result.totalComments === 0){
         toast({
           title: 'Yorum Bulunamadı',
-          description: 'Bu kanal için yorum bulunamadı veya API anahtarınızda bir sorun olabilir.',
+          description: 'Bu kanal için yorum bulunamadı. Yorumlar devre dışı bırakılmış olabilir.',
           variant: 'destructive'
         })
       } else {

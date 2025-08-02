@@ -228,6 +228,11 @@ export function SentimentResults({ isLoading, analysis, error, type }: Sentiment
               </CardTitle>
               <CardDescription className="text-lg text-slate-600 dark:text-slate-300">
                 {analysis.channelTitle} - {analysis.totalVideos} video, {analysis.totalComments} yorum analiz edildi
+                {analysis.totalComments === 0 && (
+                  <span className="block text-sm text-orange-600 dark:text-orange-400 mt-1">
+                    ⚠️ Bu kanalda yorum bulunamadı. Yorumlar devre dışı bırakılmış olabilir.
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>

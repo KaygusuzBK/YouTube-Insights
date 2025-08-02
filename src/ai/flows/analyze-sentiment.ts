@@ -410,6 +410,35 @@ const analyzeChannelSentimentFlow = ai.defineFlow(
       return result;
     }
 
+    // Check if any videos have comments
+    const videosWithComments = channelData.videos.filter(v => v.comments.length > 0);
+    if (videosWithComments.length === 0) {
+      const result: AnalyzeChannelSentimentOutput = {
+        channelId: channelData.channel.id,
+        channelTitle: channelData.channel.title,
+        subscriberCount: channelData.channel.subscriberCount,
+        videoCount: channelData.channel.videoCount,
+        overallSentiment: 'Neutral',
+        positiveKeywords: [],
+        negativeKeywords: [],
+        videos: channelData.videos.map(v => ({
+          videoId: v.video.id || `video_${Math.random().toString(36).substr(2, 9)}`,
+          videoTitle: v.video.title,
+          publishedAt: v.video.publishedAt,
+          viewCount: v.video.viewCount,
+          commentCount: v.video.commentCount,
+          overallSentiment: 'Neutral' as const,
+          positiveKeywords: [],
+          negativeKeywords: [],
+          comments: []
+        })),
+        totalComments: 0,
+        totalVideos: channelData.videos.length,
+      };
+      setCachedResult(`channel_${channelId}`, result);
+      return result;
+    }
+
     // Stage 2: AI Analysis with retry mechanism (75%)
     console.log('Stage 2: Analyzing channel with AI...');
     
