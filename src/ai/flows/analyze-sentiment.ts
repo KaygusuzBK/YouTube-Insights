@@ -93,6 +93,7 @@ const prompt = ai.definePrompt({
   input: {schema: z.object({videoId: z.string()})},
   output: {schema: AnalyzeSentimentOutputSchema},
   tools: [getCommentsTool],
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are a YouTube comment analysis expert. Your task is to analyze the comments for the given video ID.
 
 Video ID: {{{videoId}}}
