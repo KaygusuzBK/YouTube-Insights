@@ -250,6 +250,8 @@ Please perform the following actions:
 4. For each video, analyze its individual sentiment and extract keywords.
 5. Provide a comprehensive analysis of the channel's audience engagement and sentiment trends.
 
+IMPORTANT: Each video object MUST include the "videoId" property. This is a required field.
+
 Format your response as JSON with the following structure:
 {
   "channelId": "channel_id",
@@ -280,7 +282,9 @@ Format your response as JSON with the following structure:
   ],
   "totalComments": total_comment_count,
   "totalVideos": total_video_count
-}`,
+}
+
+CRITICAL: Ensure that every video object has a "videoId" field. This field is mandatory and cannot be missing.`,
 });
 
 // Video Analysis Flow
@@ -422,7 +426,20 @@ const analyzeChannelSentimentFlow = ai.defineFlow(
     while (retryCount < maxRetries) {
       try {
         const {output} = await channelPrompt({ channelData: JSON.stringify(channelData) });
-        result = output || {
+        
+        // Validate and fix the output if needed
+        let validatedOutput = output;
+        if (output && output.videos) {
+          validatedOutput = {
+            ...output,
+            videos: output.videos.map((video: any, index: number) => ({
+              ...video,
+              videoId: video.videoId || channelData.videos[index]?.video.id || `video_${Math.random().toString(36).substr(2, 9)}`,
+            }))
+          };
+        }
+        
+        result = validatedOutput || {
           channelId: channelData.channel.id,
           channelTitle: channelData.channel.title,
           subscriberCount: channelData.channel.subscriberCount,
@@ -455,7 +472,7 @@ const analyzeChannelSentimentFlow = ai.defineFlow(
               positiveKeywords: [],
               negativeKeywords: [],
               videos: channelData.videos.map(v => ({
-                videoId: v.video.id,
+                videoId: v.video.id || `video_${Math.random().toString(36).substr(2, 9)}`,
                 videoTitle: v.video.title,
                 publishedAt: v.video.publishedAt,
                 viewCount: v.video.viewCount,
