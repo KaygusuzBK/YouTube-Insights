@@ -2,7 +2,7 @@ import { type AnalyzeSentimentOutput } from "@/ai/flows/analyze-sentiment";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Frown, Meh, Smile, ThumbsDown, ThumbsUp } from "lucide-react";
 
