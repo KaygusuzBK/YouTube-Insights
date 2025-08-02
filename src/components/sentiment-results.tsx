@@ -12,37 +12,6 @@ interface SentimentResultsProps {
   error: string | null;
 }
 
-const mockComments = [
-  {
-    author: 'TechieTom',
-    avatar: 'https://placehold.co/40x40.png',
-    dataAiHint: 'person tech',
-    text: "This is an <span class='bg-positive/20 text-positive font-medium rounded px-1.5 py-0.5'>amazing</span> product! I absolutely <span class='bg-positive/20 text-positive font-medium rounded px-1.5 py-0.5'>love</span> how it simplifies my workflow. <span class='bg-positive/20 text-positive font-medium rounded px-1.5 py-0.5'>Highly recommended</span>!",
-    sentiment: 'Positive',
-  },
-  {
-    author: 'CriticalChris',
-    avatar: 'https://placehold.co/40x40.png',
-    dataAiHint: 'person glasses',
-    text: "Honestly, I found it a bit <span class='bg-destructive/20 text-destructive font-medium rounded px-1.5 py-0.5'>disappointing</span>. The interface is <span class='bg-destructive/20 text-destructive font-medium rounded px-1.5 py-0.5'>clunky</span> and not very intuitive. <span class='bg-destructive/20 text-destructive font-medium rounded px-1.5 py-0.5'>Needs improvement</span>.",
-    sentiment: 'Negative',
-  },
-  {
-    author: 'NeutralNancy',
-    avatar: 'https://placehold.co/40x40.png',
-    dataAiHint: 'woman portrait',
-    text: "It's an okay tool. It does the job as described, but doesn't have any standout features. Pretty much what I expected.",
-    sentiment: 'Neutral',
-  },
-  {
-    author: 'EnthusiastEva',
-    avatar: 'https://placehold.co/40x40.png',
-    dataAiHint: 'woman smiling',
-    text: "Wow! Just wow! <span class='bg-positive/20 text-positive font-medium rounded px-1.5 py-0.5'>Incredible</span> piece of technology. The developers did a <span class='bg-positive/20 text-positive font-medium rounded px-1.5 py-0.5'>fantastic</span> job. I'm very <span class='bg-positive/20 text-positive font-medium rounded px-1.5 py-0.5'>impressed</span>.",
-    sentiment: 'Positive',
-  }
-];
-
 const SentimentIcon = ({ sentiment }: { sentiment: string }) => {
   if (sentiment.toLowerCase().includes('positive')) {
     return <Smile className="h-8 w-8 text-positive" />;
@@ -71,9 +40,8 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
   if (!analysis) {
     return null;
   }
-
-  const positiveKeywords = analysis.positiveKeywords.split(',').map(k => k.trim()).filter(Boolean);
-  const negativeKeywords = analysis.negativeKeywords.split(',').map(k => k.trim()).filter(Boolean);
+  
+  const { overallSentiment, positiveKeywords, negativeKeywords, comments } = analysis;
 
   return (
     <div className="space-y-8 animate-in fade-in-0 duration-500">
@@ -81,10 +49,10 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
         <Card className="md:col-span-1 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Overall Sentiment</CardTitle>
-            <SentimentIcon sentiment={analysis.overallSentiment} />
+            <SentimentIcon sentiment={overallSentiment} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{analysis.overallSentiment}</div>
+            <div className="text-2xl font-bold font-headline">{overallSentiment}</div>
             <p className="text-xs text-muted-foreground">Based on AI analysis of comments</p>
           </CardContent>
         </Card>
@@ -118,14 +86,14 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
 
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className="font-headline">Comment Analysis Breakdown (Mock)</CardTitle>
-          <CardDescription>This is a mock representation of how individual comments would be analyzed.</CardDescription>
+          <CardTitle className="font-headline">Comment Analysis Breakdown</CardTitle>
+          <CardDescription>AI-generated sample comments based on the video's topic.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {mockComments.map((comment, index) => (
+          {comments.map((comment, index) => (
             <div key={index} className="flex gap-4">
               <Avatar>
-                <AvatarImage src={comment.avatar} data-ai-hint={comment.dataAiHint} />
+                <AvatarImage src={`https://placehold.co/40x40.png?text=${comment.author.substring(0,2)}`} data-ai-hint="person avatar" />
                 <AvatarFallback>{comment.author.substring(0, 2)}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
@@ -135,7 +103,7 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
                   {comment.sentiment === 'Negative' && <Badge variant="destructive" className="text-xs">Negative</Badge>}
                   {comment.sentiment === 'Neutral' && <Badge variant="secondary" className="text-xs">Neutral</Badge>}
                 </div>
-                <p className="text-sm text-muted-foreground mt-1" dangerouslySetInnerHTML={{ __html: comment.text }} />
+                <p className="text-sm text-muted-foreground mt-1">{comment.text}</p>
               </div>
             </div>
           ))}
