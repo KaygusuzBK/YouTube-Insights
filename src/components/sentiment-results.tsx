@@ -73,7 +73,7 @@ export function SentimentResults({ isLoading, analysis, error }: SentimentResult
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Negatif Anahtar Kelimeler</CardTitle>
             <ThumbsDown className="h-4 w-4 text-muted-foreground" />
-          </Header>
+          </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {negativeKeywords.length > 0 ? negativeKeywords.map((keyword) => (
