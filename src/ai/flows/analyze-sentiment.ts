@@ -284,7 +284,12 @@ Format your response as JSON with the following structure:
   "totalVideos": total_video_count
 }
 
-CRITICAL: Ensure that every video object has a "videoId" field. This field is mandatory and cannot be missing.`,
+CRITICAL RULES:
+1. Every video object MUST have a "videoId" field at the top level of the video object
+2. The "videoId" field should NEVER be inside the comments array
+3. Comments should ONLY have "author", "text", and "sentiment" fields
+4. Do NOT put videoId inside individual comments
+5. The videoId must be a string and must be present for every video`,
 });
 
 // Video Analysis Flow
@@ -432,10 +437,24 @@ const analyzeChannelSentimentFlow = ai.defineFlow(
         if (output && output.videos) {
           validatedOutput = {
             ...output,
-            videos: output.videos.map((video: any, index: number) => ({
-              ...video,
-              videoId: video.videoId || channelData.videos[index]?.video.id || `video_${Math.random().toString(36).substr(2, 9)}`,
-            }))
+            videos: output.videos.map((video: any, index: number) => {
+              // Ensure videoId exists and is in the correct place
+              const correctVideoId = video.videoId || 
+                                   channelData.videos[index]?.video.id || 
+                                   `video_${Math.random().toString(36).substr(2, 9)}`;
+              
+              // Remove videoId from comments if it's incorrectly placed there
+              const cleanedComments = video.comments ? video.comments.map((comment: any) => {
+                const { videoId, ...cleanComment } = comment;
+                return cleanComment;
+              }) : [];
+              
+              return {
+                ...video,
+                videoId: correctVideoId,
+                comments: cleanedComments
+              };
+            })
           };
         }
         
@@ -480,11 +499,15 @@ const analyzeChannelSentimentFlow = ai.defineFlow(
                 overallSentiment: 'Neutral' as const,
                 positiveKeywords: [],
                 negativeKeywords: [],
-                comments: v.comments.map(c => ({
-                  author: c.author,
-                  text: c.text,
-                  sentiment: 'Neutral' as const
-                }))
+                comments: v.comments.map(c => {
+                  // Ensure comment doesn't have videoId property
+                  const { videoId, ...cleanComment } = c as any;
+                  return {
+                    author: cleanComment.author || c.author,
+                    text: cleanComment.text || c.text,
+                    sentiment: 'Neutral' as const
+                  };
+                })
               })),
               totalComments: channelData.videos.reduce((sum, v) => sum + v.comments.length, 0),
               totalVideos: channelData.videos.length,
